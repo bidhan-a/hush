@@ -1,22 +1,27 @@
-use crate::helpers::transfer_sol;
-use crate::state::{Config, Pool};
 use anchor_lang::prelude::*;
+
+use crate::errors::Error;
+use crate::state::{Config, Pool};
 
 #[derive(Accounts)]
 #[instruction(amount: u64)]
-pub struct Deposit<'info> {
+pub struct CreatePool<'info> {
     #[account(mut)]
-    pub depositor: Signer<'info>,
+    pub admin: Signer<'info>,
 
     #[account(
         seeds=[b"config"],
         bump=config.bump,
+        constraint=config.admin.key() == admin.key() @ Error::PermissionDenied
     )]
     pub config: Box<Account<'info, Config>>,
 
     #[account(
+        init,
+        payer=admin,
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
         bump,
+        space=Pool::INIT_SPACE + 8
     )]
     pub pool: Box<Account<'info, Pool>>,
 
@@ -29,15 +34,8 @@ pub struct Deposit<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Deposit<'info> {
-    pub fn deposit(&mut self, amount: u64) -> Result<()> {
-        // Transfer SOL from depositor to vault.
-        transfer_sol(
-            self.depositor.to_account_info(),
-            self.vault.to_account_info(),
-            amount,
-            self.system_program.to_account_info(),
-            None,
-        )
+impl<'info> CreatePool<'info> {
+    pub fn create_pool(&mut self, amount: u64, bumps: &CreatePoolBumps) -> Result<()> {
+        Ok(())
     }
 }

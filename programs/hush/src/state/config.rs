@@ -4,6 +4,6 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct Config {
     pub admin: Pubkey,
-    pub config_bump: u8,
-    pub vault_bump: u8,
+    pub fee_basis_points: u16,
+    pub bump: u8,
 }

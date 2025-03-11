@@ -16,21 +16,15 @@ pub struct Initialize<'info> {
     )]
     pub config: Box<Account<'info, Config>>,
 
-    #[account(
-        seeds=[b"vault"],
-        bump
-    )]
-    pub vault: SystemAccount<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Initialize<'info> {
-    pub fn initialize(&mut self, bumps: &InitializeBumps) -> Result<()> {
+    pub fn initialize(&mut self, fee_basis_points: u16, bumps: &InitializeBumps) -> Result<()> {
         self.config.set_inner(Config {
             admin: self.admin.key(),
-            config_bump: bumps.config,
-            vault_bump: bumps.vault,
+            fee_basis_points,
+            bump: bumps.config,
         });
 
         Ok(())
