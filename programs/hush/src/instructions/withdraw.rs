@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::errors::Error;
 use crate::helpers::transfer_sol;
 use crate::state::{Config, Pool};
 
@@ -31,16 +32,33 @@ pub struct Withdraw<'info> {
 }
 
 impl<'info> Withdraw<'info> {
-    pub fn withdraw(&mut self, amount: u64) -> Result<()> {
+    pub fn withdraw(&mut self, amount: u64, nullifier: [u8; 32]) -> Result<()> {
         // Transfer SOL from vault to withdrawer.
-        let seeds: &[&[u8]] = &[b"vault", &[self.config.bump]];
+        let seeds = &[
+            b"vault",
+            self.pool.to_account_info().key.as_ref(),
+            &[self.config.bump],
+        ];
         let signer_seeds = &[&seeds[..]];
+
+        // Check if nullifier has already been used.
+        require!(
+            !self.pool.nullifiers.contains(&nullifier),
+            Error::NullifierAlreadyUsed
+        );
+
+        // Mark the nullifier as used.
+        self.pool.nullifiers.push(nullifier);
+
+        // Transfer funds from the vault to the receiver.
         transfer_sol(
             self.vault.to_account_info(),
             self.withdrawer.to_account_info(),
             amount,
             self.system_program.to_account_info(),
             Some(signer_seeds),
-        )
+        )?;
+
+        Ok(())
     }
 }

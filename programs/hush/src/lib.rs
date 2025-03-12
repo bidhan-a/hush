@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 declare_id!("CkevGEmkCSpN3SgS9ptG42qL42vV4aTS8NrhDx29sxF3");
 
+mod constants;
 mod errors;
 mod instructions;
 mod state;
@@ -20,11 +21,11 @@ pub mod hush {
         ctx.accounts.create_pool(amount, &ctx.bumps)
     }
 
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        ctx.accounts.deposit(amount)
+    pub fn deposit(ctx: Context<Deposit>, amount: u64, commitment: [u8; 32]) -> Result<()> {
+        ctx.accounts.deposit(amount, commitment)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-        ctx.accounts.withdraw(amount)
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64, nullifier: [u8; 32]) -> Result<()> {
+        ctx.accounts.withdraw(amount, nullifier)
     }
 }

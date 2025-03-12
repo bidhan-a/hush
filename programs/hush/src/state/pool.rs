@@ -1,9 +1,6 @@
 use anchor_lang::prelude::*;
 
-/// Merkle tree height.
-const TREE_HEIGHT: usize = 20;
-/// Maximum number of nullifiers.
-const MAX_NULLIFIERS: usize = 1000;
+use crate::constants::{MAX_NULLIFIERS, TREE_HEIGHT};
 
 #[account]
 #[derive(InitSpace)]
@@ -14,4 +11,6 @@ pub struct Pool {
     pub filled_subtrees: [[u8; 32]; TREE_HEIGHT],
     #[max_len(MAX_NULLIFIERS)]
     pub nullifiers: Vec<[u8; 32]>,
+    pub pool_bump: u8,
+    pub vault_bump: u8,
 }
