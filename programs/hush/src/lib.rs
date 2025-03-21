@@ -6,6 +6,7 @@ mod constants;
 mod errors;
 mod instructions;
 mod state;
+mod zk;
 
 use instructions::*;
 

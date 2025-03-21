@@ -10,4 +10,8 @@ pub enum Error {
     InsufficientFunds,
     #[msg("Nullier has already been used.")]
     NullifierAlreadyUsed,
+    #[msg("The proof is invalid.")]
+    InvalidProof,
+    #[msg("The proof could not be verified.")]
+    VerificationError,
 }
