@@ -4,7 +4,7 @@ use anchor_lang::{
     system_program::{transfer, Transfer},
 };
 
-use crate::{constants::TREE_HEIGHT, state::Pool};
+use crate::{constants::TREE_HEIGHT, state::PoolState};
 
 pub fn transfer_sol<'info>(
     from: AccountInfo<'info>,
@@ -69,7 +69,7 @@ pub fn compute_initial_merkle_root() -> [u8; 32] {
 /// Updates the incremental Merkle tree with a new leaf.
 /// The algorithm iterates over each level of the tree, updating the stored “filled subtree”
 /// and computing the new root based on whether the new leaf is inserted as a left or right child.
-pub fn update_merkle_tree(pool: &mut Pool, leaf: [u8; 32]) -> Result<[u8; 32]> {
+pub fn update_merkle_tree(pool: &mut PoolState, leaf: [u8; 32]) -> Result<[u8; 32]> {
     let mut current_index = pool.next_index;
     let mut current_hash = leaf;
     for i in 0..TREE_HEIGHT {

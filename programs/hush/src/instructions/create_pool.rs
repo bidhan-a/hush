@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::errors::Error;
-use crate::state::{Config, Pool};
+use crate::state::{ConfigState, PoolState};
 
 use super::helpers::{compute_initial_filled_subtrees, compute_initial_merkle_root};
 
@@ -16,16 +16,16 @@ pub struct CreatePool<'info> {
         bump=config.bump,
         constraint=config.admin.key() == admin.key() @ Error::PermissionDenied
     )]
-    pub config: Box<Account<'info, Config>>,
+    pub config: Box<Account<'info, ConfigState>>,
 
     #[account(
         init,
         payer=admin,
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
         bump,
-        space=Pool::INIT_SPACE + 8
+        space=PoolState::INIT_SPACE + 8
     )]
-    pub pool: Box<Account<'info, Pool>>,
+    pub pool: Box<Account<'info, PoolState>>,
 
     #[account(
         seeds=[b"vault", pool.key().as_ref()],
@@ -40,12 +40,11 @@ impl<'info> CreatePool<'info> {
     pub fn create_pool(&mut self, amount: u64, bumps: &CreatePoolBumps) -> Result<()> {
         let merkle_root = compute_initial_merkle_root();
         let filled_subtrees = compute_initial_filled_subtrees();
-        self.pool.set_inner(Pool {
+        self.pool.set_inner(PoolState {
             amount,
             next_index: 0,
             merkle_root,
             filled_subtrees,
-            nullifiers: Vec::new(),
             pool_bump: bumps.pool,
             vault_bump: bumps.vault,
         });

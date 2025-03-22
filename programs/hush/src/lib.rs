@@ -23,10 +23,10 @@ pub mod hush {
     }
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64, commitment: [u8; 32]) -> Result<()> {
-        ctx.accounts.deposit(amount, commitment)
+        ctx.accounts.deposit(amount, commitment, &ctx.bumps)
     }
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64, nullifier: [u8; 32]) -> Result<()> {
-        ctx.accounts.withdraw(amount, nullifier)
+        ctx.accounts.withdraw(amount, nullifier, &ctx.bumps)
     }
 }

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::Config;
+use crate::state::ConfigState;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -12,16 +12,16 @@ pub struct Initialize<'info> {
         payer=admin,
         seeds=[b"config"],
         bump,
-        space=Config::INIT_SPACE + 8
+        space=ConfigState::INIT_SPACE + 8
     )]
-    pub config: Box<Account<'info, Config>>,
+    pub config: Box<Account<'info, ConfigState>>,
 
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Initialize<'info> {
     pub fn initialize(&mut self, fee_basis_points: u16, bumps: &InitializeBumps) -> Result<()> {
-        self.config.set_inner(Config {
+        self.config.set_inner(ConfigState {
             admin: self.admin.key(),
             fee_basis_points,
             bump: bumps.config,
