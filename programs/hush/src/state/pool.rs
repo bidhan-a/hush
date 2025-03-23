@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
-use ark_bn254::Fr;
-use light_poseidon::{Poseidon, PoseidonBytesHasher};
+use solana_poseidon::{hashv, Endianness, Parameters};
 
 use crate::constants::TREE_HEIGHT;
 
@@ -35,6 +34,7 @@ impl PoolState {
             }
             current_index /= 2;
         }
+        self.merkle_root = current_hash;
         Ok(current_hash)
     }
 
@@ -141,7 +141,7 @@ impl PoolState {
 
     /// Hashes a pair of 32-byte arrays using Poseiden hash.
     fn hash_pair(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-        let mut poseidon = Poseidon::<Fr>::new_circom(2).unwrap();
-        poseidon.hash_bytes_le(&[a, b]).unwrap()
+        let hash = hashv(Parameters::Bn254X5, Endianness::LittleEndian, &[a, b]).unwrap();
+        hash.to_bytes()
     }
 }

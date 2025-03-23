@@ -1116,7 +1116,7 @@ dependencies = [
  "ark-bn254 0.5.0",
  "ark-serialize 0.5.0",
  "groth16-solana",
- "light-poseidon 0.3.0",
+ "solana-poseidon",
 ]
 
 [[package]]
@@ -1265,18 +1265,6 @@ checksum = "3c9a85a9752c549ceb7578064b4ed891179d20acd85f27318573b64d2d7ee7ee"
 dependencies = [
  "ark-bn254 0.4.0",
  "ark-ff 0.4.2",
- "num-bigint",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "light-poseidon"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39e3d87542063daaccbfecd78b60f988079b6ec4e089249658b9455075c78d42"
-dependencies = [
- "ark-bn254 0.5.0",
- "ark-ff 0.5.0",
  "num-bigint",
  "thiserror 1.0.69",
 ]
@@ -2166,6 +2154,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana-poseidon"
+version = "2.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8288f8645228ebb2989e32c35b67aabdbfafe7d33580a794b8ab044c02173dd9"
+dependencies = [
+ "ark-bn254 0.4.0",
+ "light-poseidon",
+ "solana-define-syscall",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "solana-program"
 version = "1.18.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2195,7 +2195,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "libsecp256k1",
- "light-poseidon 0.2.0",
+ "light-poseidon",
  "log",
  "memoffset",
  "num-bigint",
