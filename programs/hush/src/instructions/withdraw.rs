@@ -55,15 +55,6 @@ impl<'info> Withdraw<'info> {
         ];
         let signer_seeds = &[&seeds[..]];
 
-        // Check if nullifier has already been used.
-        // require!(
-        //     !self.pool.nullifiers.contains(&nullifier),
-        //     Error::NullifierAlreadyUsed
-        // );
-
-        // // Mark the nullifier as used.
-        // self.pool.nullifiers.push(nullifier);
-
         // Transfer funds from the vault to the receiver.
         transfer_sol(
             self.vault.to_account_info(),

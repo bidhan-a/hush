@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 use crate::constants::TREE_HEIGHT;
 use crate::errors::Error;
 use crate::helpers::transfer_sol;
-use crate::instructions::helpers::update_merkle_tree;
 use crate::state::{ConfigState, DepositState, PoolState};
 
 #[derive(Accounts)]
@@ -68,8 +67,7 @@ impl<'info> Deposit<'info> {
         )?;
 
         // Update the incremental Merkle tree with the new leaf.
-        let new_root = update_merkle_tree(&mut self.pool, commitment)?;
-        self.pool.merkle_root = new_root;
+        self.pool.update_merkle_tree(commitment)?;
         self.pool.next_index += 1;
 
         // Set deposit state.

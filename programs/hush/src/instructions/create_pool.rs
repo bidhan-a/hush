@@ -3,8 +3,6 @@ use anchor_lang::prelude::*;
 use crate::errors::Error;
 use crate::state::{ConfigState, PoolState};
 
-use super::helpers::{compute_initial_filled_subtrees, compute_initial_merkle_root};
-
 #[derive(Accounts)]
 #[instruction(amount: u64)]
 pub struct CreatePool<'info> {
@@ -38,16 +36,11 @@ pub struct CreatePool<'info> {
 
 impl<'info> CreatePool<'info> {
     pub fn create_pool(&mut self, amount: u64, bumps: &CreatePoolBumps) -> Result<()> {
-        let merkle_root = compute_initial_merkle_root();
-        let filled_subtrees = compute_initial_filled_subtrees();
-        self.pool.set_inner(PoolState {
-            amount,
-            next_index: 0,
-            merkle_root,
-            filled_subtrees,
-            pool_bump: bumps.pool,
-            vault_bump: bumps.vault,
-        });
+        self.pool.amount = amount;
+        self.pool.next_index = 0;
+        self.pool.pool_bump = bumps.pool;
+        self.pool.vault_bump = bumps.vault;
+        self.pool.initialize_merkle_tree();
         Ok(())
     }
 }

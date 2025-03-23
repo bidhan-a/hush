@@ -1040,13 +1040,13 @@ dependencies = [
 [[package]]
 name = "groth16-solana"
 version = "0.0.3"
-source = "git+https://github.com/Lightprotocol/groth16-solana#8892daeef401cb8f0c245a35ab648cf030d0b8e2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acc65a9ef90161a41b67cd4611e113d09f3819a1d488e4effafde92fca70861d"
 dependencies = [
  "ark-bn254 0.4.0",
  "ark-ec 0.4.2",
  "ark-ff 0.4.2",
  "ark-serialize 0.4.2",
- "num-bigint",
  "solana-program 1.18.26",
  "thiserror 1.0.69",
 ]
@@ -1116,6 +1116,7 @@ dependencies = [
  "ark-bn254 0.5.0",
  "ark-serialize 0.5.0",
  "groth16-solana",
+ "light-poseidon 0.3.0",
 ]
 
 [[package]]
@@ -1264,6 +1265,18 @@ checksum = "3c9a85a9752c549ceb7578064b4ed891179d20acd85f27318573b64d2d7ee7ee"
 dependencies = [
  "ark-bn254 0.4.0",
  "ark-ff 0.4.2",
+ "num-bigint",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "light-poseidon"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39e3d87542063daaccbfecd78b60f988079b6ec4e089249658b9455075c78d42"
+dependencies = [
+ "ark-bn254 0.5.0",
+ "ark-ff 0.5.0",
  "num-bigint",
  "thiserror 1.0.69",
 ]
@@ -2182,7 +2195,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "libsecp256k1",
- "light-poseidon",
+ "light-poseidon 0.2.0",
  "log",
  "memoffset",
  "num-bigint",
