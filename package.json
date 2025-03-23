@@ -4,7 +4,8 @@
     "circuits:build": "./scripts/build_circuits.sh"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "0.31.0"
+    "@coral-xyz/anchor": "0.31.0",
+    "@solana/web3.js": "^1.98.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
