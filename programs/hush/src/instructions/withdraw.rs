@@ -18,14 +18,14 @@ pub struct Withdraw<'info> {
 
     #[account(
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
-        bump,
+        bump=pool.pool_bump,
     )]
     pub pool: Box<Account<'info, PoolState>>,
 
     #[account(
         mut,
         seeds=[b"vault", pool.key().as_ref()],
-        bump
+        bump=pool.vault_bump
     )]
     pub vault: SystemAccount<'info>,
 
@@ -34,7 +34,7 @@ pub struct Withdraw<'info> {
         payer=withdrawer,
         seeds=[b"withdraw", pool.key().as_ref(), nullifier.as_ref()],
         bump,
-        space=WithdrawState::INIT_SPACE
+        space=WithdrawState::INIT_SPACE + 8
     )]
     pub withdraw: Box<Account<'info, WithdrawState>>,
 
@@ -48,15 +48,15 @@ impl<'info> Withdraw<'info> {
         nullifier: [u8; 32],
         bumps: &WithdrawBumps,
     ) -> Result<()> {
-        // Transfer SOL from vault to withdrawer.
+        // TODO: ZK verification.
+
+        // Transfer funds from the vault to the receiver.
         let seeds = &[
             b"vault",
             self.pool.to_account_info().key.as_ref(),
-            &[self.config.bump],
+            &[self.pool.vault_bump],
         ];
         let signer_seeds = &[&seeds[..]];
-
-        // Transfer funds from the vault to the receiver.
         transfer_sol(
             self.vault.to_account_info(),
             self.withdrawer.to_account_info(),

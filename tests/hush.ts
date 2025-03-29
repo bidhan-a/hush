@@ -24,6 +24,7 @@ describe("hush", () => {
   let poolAccount: anchor.web3.PublicKey;
   let vaultAccount: anchor.web3.PublicKey;
   let depositAccount: anchor.web3.PublicKey;
+  let withdrawAccount: anchor.web3.PublicKey;
 
   // Test values.
   const feeBasisPoints = 100; // 1%.
@@ -53,6 +54,16 @@ describe("hush", () => {
       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
     });
 
+    const withdrawerXAirdrop = await provider.connection.requestAirdrop(
+      withdrawerXKeypair.publicKey,
+      100 * LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction({
+      signature: withdrawerXAirdrop,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    });
+
     [configAccount] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("config")],
       program.programId
@@ -74,6 +85,15 @@ describe("hush", () => {
         Buffer.from("deposit"),
         poolAccount.toBuffer(),
         testDeposit.commitmentHash,
+      ],
+      program.programId
+    );
+
+    [withdrawAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("withdraw"),
+        poolAccount.toBuffer(),
+        testDeposit.nullifierHash,
       ],
       program.programId
     );
@@ -156,5 +176,75 @@ describe("hush", () => {
       ) === 0
     );
     assert.ok(deposit.index === 0);
+  });
+
+  it("[deposit] does not allow duplicate deposit with the same commitment hash", async () => {
+    try {
+      await program.methods
+        .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
+        .accountsPartial({
+          depositor: depositorXKeypair.publicKey,
+          config: configAccount,
+          pool: poolAccount,
+        })
+        .signers([depositorXKeypair])
+        .rpc();
+    } catch (err) {
+      assert.match(err.toString(), /already in use/);
+    }
+  });
+
+  it("[withdraw] creates a withdrawal", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+
+    await program.methods
+      .withdraw(poolAmount, Array.from(testDeposit.nullifierHash))
+      .accountsPartial({
+        withdrawer: withdrawerXKeypair.publicKey,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([withdrawerXKeypair])
+      .rpc();
+
+    const pool = await program.account.poolState.fetch(poolAccount);
+
+    // Check if amount was transferred to withdrawer.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Check withdraw state.
+    const withdraw = await program.account.withdrawState.fetch(withdrawAccount);
+    assert.ok(withdraw.pool.toString() === poolAccount.toString());
+    assert.ok(
+      withdraw.to.toString() === withdrawerXKeypair.publicKey.toString()
+    );
+    assert.ok(withdraw.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(withdraw.nullifier),
+        Buffer.from(testDeposit.nullifierHash)
+      ) === 0
+    );
+  });
+
+  it("[withdraw] does not allow duplicate withdrawal with the same nullifier hash", async () => {
+    try {
+      await program.methods
+        .withdraw(poolAmount, Array.from(testDeposit.nullifierHash))
+        .accountsPartial({
+          withdrawer: withdrawerXKeypair.publicKey,
+          config: configAccount,
+          pool: poolAccount,
+        })
+        .signers([withdrawerXKeypair])
+        .rpc();
+    } catch (err) {
+      assert.match(err.toString(), /already in use/);
+    }
   });
 });
