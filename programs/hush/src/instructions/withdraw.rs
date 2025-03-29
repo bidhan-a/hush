@@ -23,6 +23,7 @@ pub struct Withdraw<'info> {
     pub pool: Box<Account<'info, PoolState>>,
 
     #[account(
+        mut,
         seeds=[b"vault", pool.key().as_ref()],
         bump
     )]

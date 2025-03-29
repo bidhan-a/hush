@@ -18,12 +18,14 @@ pub struct Deposit<'info> {
     pub config: Box<Account<'info, ConfigState>>,
 
     #[account(
+        mut,
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
         bump=pool.pool_bump,
     )]
     pub pool: Box<Account<'info, PoolState>>,
 
     #[account(
+        mut,
         seeds=[b"vault", pool.key().as_ref()],
         bump=pool.vault_bump
     )]
@@ -34,7 +36,7 @@ pub struct Deposit<'info> {
         payer=depositor,
         seeds=[b"deposit", pool.key().as_ref(), commitment.as_ref()],
         bump,
-        space=DepositState::INIT_SPACE
+        space=DepositState::INIT_SPACE + 8
     )]
     pub deposit: Box<Account<'info, DepositState>>,
 
@@ -53,6 +55,8 @@ impl<'info> Deposit<'info> {
             self.pool.next_index < (1 << TREE_HEIGHT),
             Error::MerkleTreeFull
         );
+
+        let current_index = self.pool.next_index;
 
         // Ensure the user has enough funds for deposit.
         require!(self.depositor.lamports() > amount, Error::InsufficientFunds);
@@ -76,6 +80,7 @@ impl<'info> Deposit<'info> {
             from: self.depositor.key(),
             amount,
             commitment,
+            index: current_index,
             bump: bumps.deposit,
         });
 
