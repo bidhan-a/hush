@@ -8,6 +8,8 @@ pub enum Error {
     MerkleTreeFull,
     #[msg("Insufficient funds for deposit.")]
     InsufficientFunds,
+    #[msg("The deposit is invalid.")]
+    InvalidDeposit,
     #[msg("Nullier has already been used.")]
     NullifierAlreadyUsed,
     #[msg("The proof is invalid.")]

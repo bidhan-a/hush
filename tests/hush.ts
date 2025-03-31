@@ -139,6 +139,7 @@ describe("hush", () => {
       .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
       .accountsPartial({
         depositor: depositorXKeypair.publicKey,
+        previousDeposit: null,
         config: configAccount,
         pool: poolAccount,
       })
@@ -184,6 +185,7 @@ describe("hush", () => {
         .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
         .accountsPartial({
           depositor: depositorXKeypair.publicKey,
+          previousDeposit: null,
           config: configAccount,
           pool: poolAccount,
         })

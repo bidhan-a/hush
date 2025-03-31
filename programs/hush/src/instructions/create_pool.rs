@@ -38,6 +38,7 @@ impl<'info> CreatePool<'info> {
     pub fn create_pool(&mut self, amount: u64, bumps: &CreatePoolBumps) -> Result<()> {
         self.pool.amount = amount;
         self.pool.next_index = 0;
+        self.pool.previous_commitment = None;
         self.pool.pool_bump = bumps.pool;
         self.pool.vault_bump = bumps.vault;
         self.pool.initialize_merkle_tree();

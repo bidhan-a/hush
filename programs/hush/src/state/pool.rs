@@ -10,6 +10,7 @@ pub struct PoolState {
     pub next_index: u32,
     pub merkle_root: [u8; 32],
     pub filled_subtrees: [[u8; 32]; TREE_HEIGHT],
+    pub previous_commitment: Option<[u8; 32]>,
     pub pool_bump: u8,
     pub vault_bump: u8,
 }
