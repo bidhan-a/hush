@@ -34,9 +34,9 @@ pub struct Deposit<'info> {
     #[account(
         mut,
         seeds=[b"deposit", pool.key().as_ref(), pool.last_commitment.unwrap_or([0u8; 32]).as_ref()],
-        bump=previous_deposit.bump,
+        bump=last_deposit.bump,
     )]
-    pub previous_deposit: Option<Box<Account<'info, DepositState>>>,
+    pub last_deposit: Option<Box<Account<'info, DepositState>>>,
 
     #[account(
         init,
@@ -65,11 +65,11 @@ impl<'info> Deposit<'info> {
 
         let current_index = self.pool.next_index;
 
-        // Previous deposit should be present for all deposits except the first one.
+        // last deposit should be present for all deposits except the first one.
         if current_index != 0 {
-            require!(!self.previous_deposit.is_none(), Error::InvalidDeposit);
+            require!(!self.last_deposit.is_none(), Error::InvalidDeposit);
             require!(
-                self.previous_deposit.as_mut().unwrap().index == current_index - 1,
+                self.last_deposit.as_mut().unwrap().index == current_index - 1,
                 Error::InvalidDeposit
             );
         }
@@ -104,11 +104,11 @@ impl<'info> Deposit<'info> {
         // Store sibling commitments.
         let is_right_leaf = current_index % 2 == 1;
         if is_right_leaf {
-            let previous_deposit = self.previous_deposit.as_mut().unwrap();
+            let last_deposit = self.last_deposit.as_mut().unwrap();
             // Store left leaf commitment in the right leaf.
-            self.deposit.sibling_commitment = Some(previous_deposit.commitment);
+            self.deposit.sibling_commitment = Some(last_deposit.commitment);
             // Store right leaf commitment in the left leaf.
-            previous_deposit.sibling_commitment = Some(self.deposit.commitment);
+            last_deposit.sibling_commitment = Some(self.deposit.commitment);
         }
 
         // Store last commitment in the pool state.

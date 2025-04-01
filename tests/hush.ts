@@ -26,11 +26,14 @@ describe("hush", () => {
   let vaultAccount: anchor.web3.PublicKey;
   let depositAccount: anchor.web3.PublicKey;
   let withdrawAccount: anchor.web3.PublicKey;
+  let deposit2Account: anchor.web3.PublicKey;
+  let withdraw2Account: anchor.web3.PublicKey;
 
   // Test values.
   const feeBasisPoints = 100; // 1%.
   const poolAmount = new anchor.BN(1 * LAMPORTS_PER_SOL); // 1 SOL pool.
   let testDeposit: IDeposit;
+  let testDeposit2: IDeposit;
 
   before(async () => {
     const latestBlockhash = await provider.connection.getLatestBlockhash();
@@ -65,6 +68,26 @@ describe("hush", () => {
       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
     });
 
+    const depositorYAirdrop = await provider.connection.requestAirdrop(
+      depositorYKeypair.publicKey,
+      100 * LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction({
+      signature: depositorYAirdrop,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    });
+
+    const withdrawerYAirdrop = await provider.connection.requestAirdrop(
+      withdrawerYKeypair.publicKey,
+      100 * LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction({
+      signature: withdrawerYAirdrop,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    });
+
     [configAccount] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("config")],
       program.programId
@@ -78,9 +101,10 @@ describe("hush", () => {
       program.programId
     );
 
-    const nullifier = generateRandomNumber(31);
-    const secret = generateRandomNumber(31);
-    testDeposit = await Deposit.create(poolAccount, nullifier, secret);
+    // Deposit 1.
+    const nullifier1 = generateRandomNumber(31);
+    const secret1 = generateRandomNumber(31);
+    testDeposit = await Deposit.create(poolAccount, nullifier1, secret1);
     [depositAccount] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("deposit"),
@@ -98,9 +122,31 @@ describe("hush", () => {
       ],
       program.programId
     );
+
+    // Deposit 2.
+    const nullifier2 = generateRandomNumber(31);
+    const secret2 = generateRandomNumber(31);
+    testDeposit2 = await Deposit.create(poolAccount, nullifier2, secret2);
+    [deposit2Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("deposit"),
+        poolAccount.toBuffer(),
+        testDeposit2.commitmentHash,
+      ],
+      program.programId
+    );
+
+    [withdraw2Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("withdraw"),
+        poolAccount.toBuffer(),
+        testDeposit2.nullifierHash,
+      ],
+      program.programId
+    );
   });
 
-  it("[initialize] initializes config", async () => {
+  it("[initialize] admin initializes the config", async () => {
     await program.methods
       .initialize(feeBasisPoints)
       .accountsPartial({
@@ -115,7 +161,7 @@ describe("hush", () => {
     assert.ok(config.feeBasisPoints === feeBasisPoints);
   });
 
-  it("[create_pool] creates a pool for the given amount", async () => {
+  it("[create_pool] admin creates a pool for the given amount", async () => {
     await program.methods
       .createPool(poolAmount)
       .accountsPartial({
@@ -131,7 +177,7 @@ describe("hush", () => {
     assert.ok(pool.nextIndex === 0);
   });
 
-  it("[deposit] creates a deposit", async () => {
+  it("[deposit] depositor X creates a deposit", async () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
@@ -140,7 +186,7 @@ describe("hush", () => {
       .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
       .accountsPartial({
         depositor: depositorXKeypair.publicKey,
-        previousDeposit: null,
+        lastDeposit: null,
         config: configAccount,
         pool: poolAccount,
       })
@@ -159,10 +205,9 @@ describe("hush", () => {
     assert.ok(
       Buffer.compare(
         Buffer.from(testDeposit.commitmentHash),
-        Buffer.from(pool.filledSubtrees[0])
+        Buffer.from(pool.lastCommitment)
       ) === 0
     );
-    // TODO: Merkle tree tests.
 
     // Check deposit state.
     const deposit = await program.account.depositState.fetch(depositAccount);
@@ -180,13 +225,13 @@ describe("hush", () => {
     assert.ok(deposit.index === 0);
   });
 
-  it("[deposit] does not allow duplicate deposit with the same commitment hash", async () => {
+  it("[deposit] depositor X is not allowed to create a duplicate deposit with the same commitment hash", async () => {
     try {
       await program.methods
         .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
         .accountsPartial({
           depositor: depositorXKeypair.publicKey,
-          previousDeposit: null,
+          lastDeposit: null,
           config: configAccount,
           pool: poolAccount,
         })
@@ -197,7 +242,68 @@ describe("hush", () => {
     }
   });
 
-  it("[withdraw] creates a withdrawal", async () => {
+  it("[deposit] depositor Y creates a deposit", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+
+    let lastDeposit = null;
+    let pool = await program.account.poolState.fetch(poolAccount);
+    if (pool.lastCommitment) {
+      [lastDeposit] = anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("deposit"),
+          poolAccount.toBuffer(),
+          new Uint8Array(pool.lastCommitment),
+        ],
+        program.programId
+      );
+    }
+
+    await program.methods
+      .deposit(poolAmount, Array.from(testDeposit2.commitmentHash))
+      .accountsPartial({
+        depositor: depositorYKeypair.publicKey,
+        lastDeposit: lastDeposit,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([depositorYKeypair])
+      .rpc();
+
+    // Check if amount was transferred to vault.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
+
+    // Check pool state.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.nextIndex === 2);
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(testDeposit2.commitmentHash),
+        Buffer.from(pool.lastCommitment)
+      ) === 0
+    );
+
+    // Check deposit state.
+    const deposit = await program.account.depositState.fetch(deposit2Account);
+    assert.ok(deposit.pool.toString() === poolAccount.toString());
+    assert.ok(
+      deposit.from.toString() === depositorYKeypair.publicKey.toString()
+    );
+    assert.ok(deposit.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(deposit.commitment),
+        Buffer.from(testDeposit2.commitmentHash)
+      ) === 0
+    );
+    assert.ok(deposit.index === 1);
+  });
+
+  it("[withdraw] withdrawer X creates a withdrawal", async () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
@@ -251,7 +357,7 @@ describe("hush", () => {
     );
   });
 
-  it("[withdraw] does not allow duplicate withdrawal with the same nullifier hash", async () => {
+  it("[withdraw] withdrawer X is not allowed to create a duplicate withdrawal with the same nullifier hash", async () => {
     try {
       const pool = await program.account.poolState.fetch(poolAccount);
       const deposit = await program.account.depositState.fetch(depositAccount);
@@ -281,6 +387,62 @@ describe("hush", () => {
     } catch (err) {
       assert.match(err.toString(), /already in use/);
     }
+  });
+
+  it("[withdraw] withdrawer Y creates a withdrawal", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    let pool = await program.account.poolState.fetch(poolAccount);
+    const deposit = await program.account.depositState.fetch(deposit2Account);
+
+    const proof = await getSnarkProof(
+      testDeposit2,
+      new Uint8Array(pool.merkleRoot),
+      pool.filledSubtrees.map((v) => new Uint8Array(v)),
+      deposit.index,
+      new Uint8Array(deposit.siblingCommitment)
+    );
+
+    await program.methods
+      .withdraw(
+        poolAmount,
+        Array.from(testDeposit2.nullifierHash),
+        Array.from(pool.merkleRoot),
+        Array.from(proof)
+      )
+      .accountsPartial({
+        withdrawer: withdrawerYKeypair.publicKey,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([withdrawerYKeypair])
+      .rpc();
+
+    // Re-fetch pool.
+    pool = await program.account.poolState.fetch(poolAccount);
+
+    // Check if amount was transferred to withdrawer.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Check withdraw state.
+    const withdraw = await program.account.withdrawState.fetch(
+      withdraw2Account
+    );
+    assert.ok(withdraw.pool.toString() === poolAccount.toString());
+    assert.ok(
+      withdraw.to.toString() === withdrawerYKeypair.publicKey.toString()
+    );
+    assert.ok(withdraw.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(withdraw.nullifierHash),
+        Buffer.from(testDeposit2.nullifierHash)
+      ) === 0
+    );
   });
 
   after(async () => {

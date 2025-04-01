@@ -12,7 +12,6 @@ use instructions::*;
 
 #[program]
 pub mod hush {
-    use crate::zk::verifier::verify_proof;
 
     use super::*;
 

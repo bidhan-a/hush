@@ -1,10 +1,7 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::hash::hashv,
     system_program::{transfer, Transfer},
 };
-
-use crate::{constants::TREE_HEIGHT, state::PoolState};
 
 pub fn transfer_sol<'info>(
     from: AccountInfo<'info>,
