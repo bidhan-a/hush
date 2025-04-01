@@ -33,7 +33,7 @@ pub struct Deposit<'info> {
 
     #[account(
         mut,
-        seeds=[b"deposit", pool.key().as_ref(), pool.previous_commitment.unwrap_or([0u8; 32]).as_ref()],
+        seeds=[b"deposit", pool.key().as_ref(), pool.last_commitment.unwrap_or([0u8; 32]).as_ref()],
         bump=previous_deposit.bump,
     )]
     pub previous_deposit: Option<Box<Account<'info, DepositState>>>,
@@ -110,6 +110,9 @@ impl<'info> Deposit<'info> {
             // Store right leaf commitment in the left leaf.
             previous_deposit.sibling_commitment = Some(self.deposit.commitment);
         }
+
+        // Store last commitment in the pool state.
+        self.pool.last_commitment = Some(self.deposit.commitment);
 
         Ok(())
     }

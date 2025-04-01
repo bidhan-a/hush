@@ -12,6 +12,8 @@ use instructions::*;
 
 #[program]
 pub mod hush {
+    use crate::zk::verifier::verify_proof;
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, fee_basis_points: u16) -> Result<()> {
@@ -26,7 +28,14 @@ pub mod hush {
         ctx.accounts.deposit(amount, commitment, &ctx.bumps)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, amount: u64, nullifier: [u8; 32]) -> Result<()> {
-        ctx.accounts.withdraw(amount, nullifier, &ctx.bumps)
+    pub fn withdraw(
+        ctx: Context<Withdraw>,
+        amount: u64,
+        nullifier_hash: [u8; 32],
+        root: [u8; 32],
+        proof: [u8; 256],
+    ) -> Result<()> {
+        ctx.accounts
+            .withdraw(amount, nullifier_hash, root, proof, &ctx.bumps)
     }
 }

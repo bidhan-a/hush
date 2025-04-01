@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 
-use crate::errors::Error;
 use crate::helpers::transfer_sol;
 use crate::state::{ConfigState, PoolState, WithdrawState};
+use crate::zk::verifier::verify_proof;
 
 #[derive(Accounts)]
-#[instruction(amount: u64, nullifier: [u8; 32])]
+#[instruction(amount: u64, nullifier_hash: [u8; 32])]
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub withdrawer: Signer<'info>,
@@ -32,7 +32,7 @@ pub struct Withdraw<'info> {
     #[account(
         init,
         payer=withdrawer,
-        seeds=[b"withdraw", pool.key().as_ref(), nullifier.as_ref()],
+        seeds=[b"withdraw", pool.key().as_ref(), nullifier_hash.as_ref()],
         bump,
         space=WithdrawState::INIT_SPACE + 8
     )]
@@ -45,10 +45,15 @@ impl<'info> Withdraw<'info> {
     pub fn withdraw(
         &mut self,
         amount: u64,
-        nullifier: [u8; 32],
+        nullifier_hash: [u8; 32],
+        root: [u8; 32],
+        proof: [u8; 256],
         bumps: &WithdrawBumps,
     ) -> Result<()> {
-        // TODO: ZK verification.
+        // Verify ZK proof.
+        verify_proof(proof, root, nullifier_hash)?;
+
+        msg!("Proof verified");
 
         // Transfer funds from the vault to the receiver.
         let seeds = &[
@@ -70,7 +75,7 @@ impl<'info> Withdraw<'info> {
             pool: self.pool.key(),
             to: self.withdrawer.key(),
             amount,
-            nullifier,
+            nullifier_hash,
             bump: bumps.withdraw,
         });
 

@@ -5,6 +5,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { assert } from "chai";
 import { generateRandomNumber } from "../lib/utils";
 import Deposit, { IDeposit } from "../lib/deposit";
+import { getSnarkProof } from "../lib/proof";
 
 describe("hush", () => {
   // Configure the client to use the local cluster.
@@ -200,9 +201,24 @@ describe("hush", () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
+    let pool = await program.account.poolState.fetch(poolAccount);
+    const deposit = await program.account.depositState.fetch(depositAccount);
+
+    const proof = await getSnarkProof(
+      testDeposit,
+      new Uint8Array(pool.merkleRoot),
+      pool.filledSubtrees.map((v) => new Uint8Array(v)),
+      deposit.index,
+      new Uint8Array(deposit.siblingCommitment)
+    );
 
     await program.methods
-      .withdraw(poolAmount, Array.from(testDeposit.nullifierHash))
+      .withdraw(
+        poolAmount,
+        Array.from(testDeposit.nullifierHash),
+        Array.from(pool.merkleRoot),
+        Array.from(proof)
+      )
       .accountsPartial({
         withdrawer: withdrawerXKeypair.publicKey,
         config: configAccount,
@@ -211,7 +227,8 @@ describe("hush", () => {
       .signers([withdrawerXKeypair])
       .rpc();
 
-    const pool = await program.account.poolState.fetch(poolAccount);
+    // Re-fetch pool.
+    pool = await program.account.poolState.fetch(poolAccount);
 
     // Check if amount was transferred to withdrawer.
     const vaultBalanceAfter = new anchor.BN(
@@ -228,7 +245,7 @@ describe("hush", () => {
     assert.ok(withdraw.amount.eq(pool.amount));
     assert.ok(
       Buffer.compare(
-        Buffer.from(withdraw.nullifier),
+        Buffer.from(withdraw.nullifierHash),
         Buffer.from(testDeposit.nullifierHash)
       ) === 0
     );
@@ -236,8 +253,24 @@ describe("hush", () => {
 
   it("[withdraw] does not allow duplicate withdrawal with the same nullifier hash", async () => {
     try {
+      const pool = await program.account.poolState.fetch(poolAccount);
+      const deposit = await program.account.depositState.fetch(depositAccount);
+
+      const proof = await getSnarkProof(
+        testDeposit,
+        new Uint8Array(pool.merkleRoot),
+        pool.filledSubtrees.map((v) => new Uint8Array(v)),
+        deposit.index,
+        new Uint8Array(deposit.siblingCommitment)
+      );
+
       await program.methods
-        .withdraw(poolAmount, Array.from(testDeposit.nullifierHash))
+        .withdraw(
+          poolAmount,
+          Array.from(testDeposit.nullifierHash),
+          Array.from(pool.merkleRoot),
+          Array.from(proof)
+        )
         .accountsPartial({
           withdrawer: withdrawerXKeypair.publicKey,
           config: configAccount,
@@ -248,5 +281,9 @@ describe("hush", () => {
     } catch (err) {
       assert.match(err.toString(), /already in use/);
     }
+  });
+
+  after(async () => {
+    await globalThis.curve_bn128.terminate();
   });
 });

@@ -6,6 +6,6 @@ pub struct WithdrawState {
     pub pool: Pubkey,
     pub to: Pubkey,
     pub amount: u64,
-    pub nullifier: [u8; 32],
+    pub nullifier_hash: [u8; 32],
     pub bump: u8,
 }

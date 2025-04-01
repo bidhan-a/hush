@@ -6,7 +6,7 @@ use groth16_solana::groth16::Groth16Verifier;
 use crate::errors::Error;
 use crate::zk::verifying_key::VERIFYINGKEY;
 
-pub fn verify_proof(proof: [u8; 256], output: u64) -> Result<()> {
+pub fn verify_proof(proof: [u8; 256], root: [u8; 32], nullifier_hash: [u8; 32]) -> Result<()> {
     let proof_a: G1 = <G1 as CanonicalDeserialize>::deserialize_uncompressed(
         &*[&change_endianness(&proof[0..64])[..], &[0u8][..]].concat(),
     )
@@ -22,12 +22,13 @@ pub fn verify_proof(proof: [u8; 256], output: u64) -> Result<()> {
         .try_into()
         .map_err(|_| Error::InvalidProof)?;
 
-    // The output should be 32 byte chunk so we can take the u64 and convert it to a left padded u8 array of 32 bytes
-    let mut result = [0u8; 32];
-    let value_bytes = output.to_be_bytes(); // Convert to big-endian bytes
-    result[24..].copy_from_slice(&value_bytes); // Copy to last 8 bytes
-
-    let public_inputs = [result];
+    let root_be: [u8; 32] = change_endianness(&root[..32])
+        .try_into()
+        .map_err(|_| Error::InvalidProof)?;
+    let nullifier_hash_be: [u8; 32] = change_endianness(&nullifier_hash[..32])
+        .try_into()
+        .map_err(|_| Error::InvalidProof)?;
+    let public_inputs = [root_be, nullifier_hash_be];
     let mut verifier =
         Groth16Verifier::new(&proof_a, &proof_b, &proof_c, &public_inputs, &VERIFYINGKEY)
             .map_err(|_| Error::InvalidProof)?;

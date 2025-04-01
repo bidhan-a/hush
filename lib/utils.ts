@@ -18,3 +18,6 @@ export const toHex = (bytes: Uint8Array, length: number): string =>
   Buffer.from(bytes)
     .toString("hex")
     .padStart(length * 2, "0");
+
+export const toBigInt = (bytes: Uint8Array): bigint =>
+  BigInt("0x" + Buffer.from(bytes).toString("hex"));
