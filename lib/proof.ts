@@ -146,7 +146,7 @@ const getMerklePath = (
   for (let level = 0; level < TREE_HEIGHT; level++) {
     const isRightNode = index % 2 === 1;
 
-    if (level === 0 && siblingCommitment) {
+    if (level === 0 && siblingCommitment && siblingCommitment.length !== 0) {
       // Use siblingCommitment at level 0
       pathElements.push(siblingCommitment);
     } else if (isRightNode) {

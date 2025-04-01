@@ -389,6 +389,66 @@ describe("hush", () => {
     }
   });
 
+  it("[withdraw] withdrawer X is not allowed to create a withdrawal using an invalid proof", async () => {
+    try {
+      const pool = await program.account.poolState.fetch(poolAccount);
+
+      // Random byte array.
+      const proof = new Uint8Array(Array.from({ length: 256 }, () => 1));
+
+      await program.methods
+        .withdraw(
+          poolAmount,
+          Array.from(testDeposit2.nullifierHash),
+          Array.from(pool.merkleRoot),
+          Array.from(proof)
+        )
+        .accountsPartial({
+          withdrawer: withdrawerXKeypair.publicKey,
+          config: configAccount,
+          pool: poolAccount,
+        })
+        .signers([withdrawerXKeypair])
+        .rpc();
+    } catch (err) {
+      assert.match(err.toString(), /InvalidProof/);
+    }
+  });
+
+  it("[withdraw] withdrawer X is not allowed to create a withdrawal using a valid but incorrect proof", async () => {
+    try {
+      const pool = await program.account.poolState.fetch(poolAccount);
+      const deposit = await program.account.depositState.fetch(depositAccount);
+
+      // Proof created using testDeposit.
+      const proof = await getSnarkProof(
+        testDeposit,
+        new Uint8Array(pool.merkleRoot),
+        pool.filledSubtrees.map((v) => new Uint8Array(v)),
+        deposit.index,
+        new Uint8Array(deposit.siblingCommitment)
+      );
+
+      await program.methods
+        .withdraw(
+          poolAmount,
+          // nullifierHash belongs to testDeposit2.
+          Array.from(testDeposit2.nullifierHash),
+          Array.from(pool.merkleRoot),
+          Array.from(proof)
+        )
+        .accountsPartial({
+          withdrawer: withdrawerXKeypair.publicKey,
+          config: configAccount,
+          pool: poolAccount,
+        })
+        .signers([withdrawerXKeypair])
+        .rpc();
+    } catch (err) {
+      assert.match(err.toString(), /VerificationError/);
+    }
+  });
+
   it("[withdraw] withdrawer Y creates a withdrawal", async () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
