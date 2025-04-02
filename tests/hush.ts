@@ -309,10 +309,11 @@ describe("hush", () => {
     );
     let pool = await program.account.poolState.fetch(poolAccount);
     const deposit = await program.account.depositState.fetch(depositAccount);
+    const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
 
     const proof = await getSnarkProof(
       testDeposit,
-      new Uint8Array(pool.merkleRoot),
+      new Uint8Array(merkleRoot),
       pool.filledSubtrees.map((v) => new Uint8Array(v)),
       deposit.index,
       new Uint8Array(deposit.siblingCommitment)
@@ -322,7 +323,7 @@ describe("hush", () => {
       .withdraw(
         poolAmount,
         Array.from(testDeposit.nullifierHash),
-        Array.from(pool.merkleRoot),
+        Array.from(merkleRoot),
         Array.from(proof)
       )
       .accountsPartial({
@@ -361,10 +362,11 @@ describe("hush", () => {
     try {
       const pool = await program.account.poolState.fetch(poolAccount);
       const deposit = await program.account.depositState.fetch(depositAccount);
+      const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
 
       const proof = await getSnarkProof(
         testDeposit,
-        new Uint8Array(pool.merkleRoot),
+        new Uint8Array(merkleRoot),
         pool.filledSubtrees.map((v) => new Uint8Array(v)),
         deposit.index,
         new Uint8Array(deposit.siblingCommitment)
@@ -374,7 +376,7 @@ describe("hush", () => {
         .withdraw(
           poolAmount,
           Array.from(testDeposit.nullifierHash),
-          Array.from(pool.merkleRoot),
+          Array.from(merkleRoot),
           Array.from(proof)
         )
         .accountsPartial({
@@ -392,6 +394,7 @@ describe("hush", () => {
   it("[withdraw] withdrawer X is not allowed to create a withdrawal using an invalid proof", async () => {
     try {
       const pool = await program.account.poolState.fetch(poolAccount);
+      const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
 
       // Random byte array.
       const proof = new Uint8Array(Array.from({ length: 256 }, () => 1));
@@ -400,7 +403,7 @@ describe("hush", () => {
         .withdraw(
           poolAmount,
           Array.from(testDeposit2.nullifierHash),
-          Array.from(pool.merkleRoot),
+          Array.from(merkleRoot),
           Array.from(proof)
         )
         .accountsPartial({
@@ -419,11 +422,12 @@ describe("hush", () => {
     try {
       const pool = await program.account.poolState.fetch(poolAccount);
       const deposit = await program.account.depositState.fetch(depositAccount);
+      const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
 
       // Proof created using testDeposit.
       const proof = await getSnarkProof(
         testDeposit,
-        new Uint8Array(pool.merkleRoot),
+        new Uint8Array(merkleRoot),
         pool.filledSubtrees.map((v) => new Uint8Array(v)),
         deposit.index,
         new Uint8Array(deposit.siblingCommitment)
@@ -434,7 +438,7 @@ describe("hush", () => {
           poolAmount,
           // nullifierHash belongs to testDeposit2.
           Array.from(testDeposit2.nullifierHash),
-          Array.from(pool.merkleRoot),
+          Array.from(merkleRoot),
           Array.from(proof)
         )
         .accountsPartial({
@@ -455,10 +459,11 @@ describe("hush", () => {
     );
     let pool = await program.account.poolState.fetch(poolAccount);
     const deposit = await program.account.depositState.fetch(deposit2Account);
+    const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
 
     const proof = await getSnarkProof(
       testDeposit2,
-      new Uint8Array(pool.merkleRoot),
+      new Uint8Array(merkleRoot),
       pool.filledSubtrees.map((v) => new Uint8Array(v)),
       deposit.index,
       new Uint8Array(deposit.siblingCommitment)
@@ -468,7 +473,7 @@ describe("hush", () => {
       .withdraw(
         poolAmount,
         Array.from(testDeposit2.nullifierHash),
-        Array.from(pool.merkleRoot),
+        Array.from(merkleRoot),
         Array.from(proof)
       )
       .accountsPartial({

@@ -6,6 +6,8 @@ pub enum Error {
     PermissionDenied,
     #[msg("Merkle tree is full.")]
     MerkleTreeFull,
+    #[msg("Merkle root is invalid.")]
+    InvalidMerkleRoot,
     #[msg("Insufficient funds for deposit.")]
     InsufficientFunds,
     #[msg("The deposit is invalid.")]

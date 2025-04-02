@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::errors::Error;
 use crate::helpers::transfer_sol;
 use crate::state::{ConfigState, PoolState, WithdrawState};
 use crate::zk::verifier::verify_proof;
@@ -50,9 +51,14 @@ impl<'info> Withdraw<'info> {
         proof: [u8; 256],
         bumps: &WithdrawBumps,
     ) -> Result<()> {
+        // Check if the root is valid.
+        require!(
+            self.pool.merkle_roots.contains(&root),
+            Error::InvalidMerkleRoot
+        );
+
         // Verify ZK proof.
         verify_proof(proof, root, nullifier_hash)?;
-
         msg!("Proof verified");
 
         // Transfer funds from the vault to the receiver.

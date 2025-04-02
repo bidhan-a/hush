@@ -1,14 +1,15 @@
 use anchor_lang::prelude::*;
 use solana_poseidon::{hashv, Endianness, Parameters};
 
-use crate::constants::TREE_HEIGHT;
+use crate::constants::{ROOT_HISTORY_SIZE, TREE_HEIGHT};
 
 #[account]
 #[derive(InitSpace)]
 pub struct PoolState {
     pub amount: u64,
     pub next_index: u32,
-    pub merkle_root: [u8; 32],
+    pub merkle_roots: [[u8; 32]; ROOT_HISTORY_SIZE],
+    pub current_merkle_root_index: u8,
     pub filled_subtrees: [[u8; 32]; TREE_HEIGHT],
     pub last_commitment: Option<[u8; 32]>,
     pub pool_bump: u8,
@@ -35,7 +36,7 @@ impl PoolState {
             }
             current_index /= 2;
         }
-        self.merkle_root = current_hash;
+        self.add_merkle_root(current_hash);
         Ok(current_hash)
     }
 
@@ -48,12 +49,26 @@ impl PoolState {
         }
         self.filled_subtrees = filled_subtrees;
 
+        // Initialize merkle root history.
+        let merkle_roots = [[0u8; 32]; ROOT_HISTORY_SIZE];
+        self.merkle_roots = merkle_roots;
+        self.current_merkle_root_index = 0;
+
         // The merkle root is the hash of the second-last level’s zero values.
         let merkle_root = PoolState::hash_pair(
             &filled_subtrees[TREE_HEIGHT - 1],
             &filled_subtrees[TREE_HEIGHT - 1],
         );
-        self.merkle_root = merkle_root;
+        self.add_merkle_root(merkle_root);
+    }
+
+    pub fn add_merkle_root(&mut self, root: [u8; 32]) {
+        if self.current_merkle_root_index == ROOT_HISTORY_SIZE as u8 - 1 {
+            self.current_merkle_root_index = 0
+        } else {
+            self.current_merkle_root_index += 1;
+        }
+        self.merkle_roots[self.current_merkle_root_index as usize] = root;
     }
 
     /// Returns the pre-calculated “default” zero value for a given level.
