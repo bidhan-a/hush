@@ -23,7 +23,7 @@ const Mixer = () => {
       {/* Tabs */}
       <div className="flex">
         <button
-          className={`flex-1 py-4 text-center transition ${
+          className={`flex-1 py-4 text-center transition cursor-pointer ${
             tab === "deposit"
               ? "bg-gray-700 text-emerald-400"
               : "hover:bg-gray-750"
@@ -33,7 +33,7 @@ const Mixer = () => {
           Deposit
         </button>
         <button
-          className={`flex-1 py-4 text-center transition ${
+          className={`flex-1 py-4 text-center transition cursor-pointer ${
             tab === "withdraw"
               ? "bg-gray-700 text-emerald-400"
               : "hover:bg-gray-750"
@@ -60,7 +60,7 @@ const Mixer = () => {
                     </div>
                     <button
                       onClick={() => navigator.clipboard.writeText(note)}
-                      className="ml-2 text-gray-400 hover:text-white"
+                      className="ml-2 text-gray-400 hover:text-white cursor-pointer"
                     >
                       <Copy size={16} />
                     </button>
@@ -68,7 +68,7 @@ const Mixer = () => {
                 ) : (
                   <button
                     onClick={generateNote}
-                    className="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center space-x-2 transition"
+                    className="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center space-x-2 transition cursor-pointer"
                   >
                     <Lock size={16} className="text-emerald-400" />
                     <span>Generate Privacy Note</span>
@@ -87,7 +87,7 @@ const Mixer = () => {
             <button
               className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
                 noteGenerated
-                  ? "bg-emerald-500 hover:bg-emerald-600"
+                  ? "bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
                   : "bg-gray-700 cursor-not-allowed"
               }`}
               disabled={!noteGenerated}
@@ -124,7 +124,7 @@ const Mixer = () => {
               />
             </div>
 
-            <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2">
+            <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2 cursor-pointer">
               <span>
                 Withdraw {selectedPool} {selectedToken}
               </span>

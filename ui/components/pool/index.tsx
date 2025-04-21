@@ -2,19 +2,22 @@
 
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
+import { useApp } from "@/context/AppContext";
+import { TOKENS } from "@/constants";
+
+const StatLoader = () => (
+  <div className="h-4 w-24 bg-gray-700 rounded animate-pulse"></div>
+);
 
 const Pool = () => {
-  const pools = [1, 10, 100, 1000];
-  const tokens = ["SOL", "USDC"];
-
-  // Stats based on selected pool and token
-  const [stats, setStats] = useState({
-    tvl: "458,219",
-    users: "2,874",
-    transactions: "16,542",
-  });
-  const [selectedPool, setSelectedPool] = useState(10);
-  const [selectedToken, setSelectedToken] = useState("SOL");
+  const {
+    selectedToken,
+    selectedPool,
+    selectedPoolStats,
+    selectedPoolStatsLoading,
+    selectToken,
+    selectPool,
+  } = useApp();
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
   return (
@@ -27,22 +30,22 @@ const Pool = () => {
               className="w-full flex justify-between items-center py-3 px-4 bg-gray-900 rounded-lg hover:bg-gray-700"
               onClick={() => setShowTokenDropdown(!showTokenDropdown)}
             >
-              <span>{selectedToken}</span>
+              <span>{selectedToken.type}</span>
               <ChevronDown size={16} />
             </button>
 
             {showTokenDropdown && (
               <div className="absolute z-10 w-full mt-2 bg-gray-800 rounded-lg shadow-lg">
-                {tokens.map((token) => (
+                {TOKENS.map((token) => (
                   <button
-                    key={token}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-700"
+                    key={token.type}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-700 cursor-pointer"
                     onClick={() => {
-                      setSelectedToken(token);
+                      selectToken(token);
                       setShowTokenDropdown(false);
                     }}
                   >
-                    {token}
+                    {token.type}
                   </button>
                 ))}
               </div>
@@ -54,19 +57,31 @@ const Pool = () => {
               Pool Size
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {pools.map((pool) => (
-                <button
-                  key={pool}
-                  className={`py-3 rounded-lg transition ${
-                    selectedPool === pool
-                      ? "bg-emerald-600 text-white"
-                      : "bg-gray-900 hover:bg-gray-700"
-                  }`}
-                  onClick={() => setSelectedPool(pool)}
-                >
-                  {pool} {selectedToken === "USDC" ? "$" : ""}
-                </button>
-              ))}
+              {selectedToken.pools.map((pool) => {
+                const disabled = !pool.available;
+                let buttonClasses = "py-3 rounded-lg transition ";
+
+                if (disabled) {
+                  buttonClasses +=
+                    "bg-gray-700 text-gray-500 opacity-50 cursor-not-allowed";
+                } else if (selectedPool.type === pool.type) {
+                  buttonClasses += "bg-emerald-600 text-white cursor-pointer";
+                } else {
+                  buttonClasses +=
+                    "bg-gray-900 hover:bg-gray-700 cursor-pointer";
+                }
+
+                return (
+                  <button
+                    key={pool.type}
+                    className={buttonClasses}
+                    onClick={() => !disabled && selectPool(pool)}
+                    disabled={disabled}
+                  >
+                    {pool.type}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -75,18 +90,34 @@ const Pool = () => {
           <h3 className="text-sm text-gray-400 mb-4">Pool Statistics</h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-400">Total Value Locked:</span>
-              <span className="font-semibold">
-                {stats.tvl} {selectedToken}
-              </span>
+              <span className="text-gray-400">Deposits:</span>
+              {selectedPoolStatsLoading ? (
+                <StatLoader />
+              ) : (
+                <span className="font-semibold">
+                  {selectedPoolStats.deposits}
+                </span>
+              )}
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Unique Users:</span>
-              <span className="font-semibold">{stats.users}</span>
+              <span className="text-gray-400">Withdrawals:</span>
+              {selectedPoolStatsLoading ? (
+                <StatLoader />
+              ) : (
+                <span className="font-semibold">
+                  {selectedPoolStats.withdrawals}
+                </span>
+              )}
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Transactions:</span>
-              <span className="font-semibold">{stats.transactions}</span>
+              <span className="text-gray-400">Total Value:</span>
+              {selectedPoolStatsLoading ? (
+                <StatLoader />
+              ) : (
+                <span className="font-semibold">
+                  {selectedPoolStats.totalValue} {selectedToken.type}
+                </span>
+              )}
             </div>
           </div>
         </div>
