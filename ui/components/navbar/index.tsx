@@ -1,5 +1,14 @@
+"use client";
+
 import React from "react";
 import { LockIcon } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const WalletMultiButtonDynamic = dynamic(
+  async () =>
+    (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
+  { ssr: false }
+);
 
 const Navbar = () => {
   return (
@@ -11,12 +20,7 @@ const Navbar = () => {
             <h1 className="text-xl font-bold">Hush</h1>
           </div>
           <div className="flex space-x-4 items-center">
-            <button className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition">
-              Connect Wallet
-            </button>
-            <button className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition">
-              Devnet
-            </button>
+            <WalletMultiButtonDynamic />
           </div>
         </div>
       </header>
