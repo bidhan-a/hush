@@ -22,3 +22,17 @@ export const toHex = (bytes: Uint8Array, length: number): string =>
 
 export const toBigInt = (bytes: Uint8Array): bigint =>
   BigInt("0x" + Buffer.from(bytes).toString("hex"));
+
+export const downloadNote = (note: string) => {
+  const fileName = `hush-${Date.now()}.txt`;
+  const element = document.createElement("a");
+  element.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8," + encodeURIComponent(note)
+  );
+  element.setAttribute("download", fileName);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+};

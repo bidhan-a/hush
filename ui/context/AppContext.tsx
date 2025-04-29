@@ -81,9 +81,9 @@ export const AppContextProvider = ({
         programId
       );
 
-      const nullifier1 = generateRandomNumber(31);
-      const secret1 = generateRandomNumber(31);
-      const deposit = await Deposit.create(poolAccount, nullifier1, secret1);
+      const nullifier = generateRandomNumber(31);
+      const secret = generateRandomNumber(31);
+      const deposit = await Deposit.create(poolAccount, nullifier, secret);
       const depositNote = Deposit.generateNote(deposit);
 
       setDepositNote(depositNote);

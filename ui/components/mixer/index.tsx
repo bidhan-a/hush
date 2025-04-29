@@ -1,6 +1,7 @@
-import { Copy, ArrowRight, Lock } from "lucide-react";
+import { Copy, ArrowRight, Lock, Download } from "lucide-react";
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { downloadNote } from "@/lib/utils";
 
 const Mixer = () => {
   const {
@@ -61,6 +62,12 @@ const Mixer = () => {
                     >
                       <Copy size={16} />
                     </button>
+                    <button
+                      onClick={() => downloadNote(depositNote)}
+                      className="ml-2 text-gray-400 hover:text-white cursor-pointer"
+                    >
+                      <Download size={16} />
+                    </button>
                   </div>
                 ) : (
                   <button
@@ -110,7 +117,7 @@ const Mixer = () => {
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
                 placeholder="Enter Solana wallet address"
-                className="w-full bg-gray-900 rounded-lg p-3 outline-none font-mono"
+                className="w-full bg-gray-900 rounded-lg p-3 outline-none"
               />
             </div>
 
@@ -121,7 +128,7 @@ const Mixer = () => {
               <input
                 type="text"
                 placeholder="Paste your deposit note here"
-                className="w-full bg-gray-900 rounded-lg p-3 outline-none font-mono"
+                className="w-full bg-gray-900 rounded-lg p-3 outline-none"
               />
             </div>
 
