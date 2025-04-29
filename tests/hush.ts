@@ -3,9 +3,9 @@ import { Program } from "@coral-xyz/anchor";
 import { Hush } from "../target/types/hush";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { assert } from "chai";
-import { generateRandomNumber } from "../lib/utils";
-import Deposit, { IDeposit } from "../lib/deposit";
-import { getSnarkProof } from "../lib/proof";
+import { generateRandomNumber } from "../ui/lib/utils";
+import Deposit, { IDeposit } from "../ui/lib/deposit";
+import { getSnarkProof } from "../ui/lib/proof";
 
 describe("hush", () => {
   // Configure the client to use the local cluster.

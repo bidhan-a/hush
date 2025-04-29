@@ -1,21 +1,21 @@
 import { Copy, ArrowRight, Lock } from "lucide-react";
 import React, { useState } from "react";
+import { useApp } from "@/context/AppContext";
 
 const Mixer = () => {
-  const [note, setNote] = useState("");
+  const {
+    selectedToken,
+    selectedPool,
+    generateDepositNote,
+    depositNote,
+    depositNoteGenerating,
+  } = useApp();
   const [tab, setTab] = useState("deposit");
   const [recipient, setRecipient] = useState("");
-  const [noteGenerated, setNoteGenerated] = useState(false);
-  const [selectedPool, setSelectedPool] = useState(10);
-  const [selectedToken, setSelectedToken] = useState("SOL");
 
-  // Generate a random note
+  // Generate a deposit note.
   const generateNote = () => {
-    const randomString =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-    setNote(randomString);
-    setNoteGenerated(true);
+    generateDepositNote();
   };
 
   return (
@@ -49,17 +49,14 @@ const Mixer = () => {
         {tab === "deposit" ? (
           <>
             <div className="mb-6">
-              <label className="block text-gray-400 text-sm mb-2">
-                Privacy Note
-              </label>
               <div className="bg-gray-900 rounded-lg p-4">
-                {noteGenerated ? (
-                  <div className="flex justify-between items-center">
+                {depositNote ? (
+                  <div className="flex justify-between items-center py-2">
                     <div className="truncate flex-1 font-mono text-emerald-400">
-                      {note}
+                      {depositNote}
                     </div>
                     <button
-                      onClick={() => navigator.clipboard.writeText(note)}
+                      onClick={() => navigator.clipboard.writeText(depositNote)}
                       className="ml-2 text-gray-400 hover:text-white cursor-pointer"
                     >
                       <Copy size={16} />
@@ -71,10 +68,14 @@ const Mixer = () => {
                     className="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center space-x-2 transition cursor-pointer"
                   >
                     <Lock size={16} className="text-emerald-400" />
-                    <span>Generate Privacy Note</span>
+                    <span>Generate Note</span>
                   </button>
                 )}
               </div>
+              <p className="text-amber-400 text-xs mt-2 text-center">
+                Please save your deposit note securely. You will need it to
+                withdraw funds.
+              </p>
             </div>
 
             <div className="mb-6 bg-gray-900 p-4 rounded-lg">
@@ -86,21 +87,21 @@ const Mixer = () => {
 
             <button
               className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
-                noteGenerated
+                depositNote && !depositNoteGenerating
                   ? "bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
                   : "bg-gray-700 cursor-not-allowed"
               }`}
-              disabled={!noteGenerated}
+              disabled={!depositNote || depositNoteGenerating}
             >
               <span>
-                Deposit {selectedPool} {selectedToken}
+                Deposit {selectedPool.type} {selectedToken.type}
               </span>
               <ArrowRight size={16} />
             </button>
           </>
         ) : (
           <>
-            <div className="mb-6">
+            <div className="mb-5">
               <label className="block text-gray-400 text-sm mb-2">
                 Recipient Address
               </label>
@@ -109,24 +110,24 @@ const Mixer = () => {
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
                 placeholder="Enter Solana wallet address"
-                className="w-full bg-gray-900 rounded-lg p-3 outline-none"
+                className="w-full bg-gray-900 rounded-lg p-3 outline-none font-mono"
               />
             </div>
 
             <div className="mb-6">
               <label className="block text-gray-400 text-sm mb-2">
-                Your Privacy Note
+                Your Note
               </label>
               <input
                 type="text"
-                placeholder="Paste your note from deposit"
+                placeholder="Paste your deposit note here"
                 className="w-full bg-gray-900 rounded-lg p-3 outline-none font-mono"
               />
             </div>
 
             <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2 cursor-pointer">
               <span>
-                Withdraw {selectedPool} {selectedToken}
+                Withdraw {selectedPool.type} {selectedToken.type}
               </span>
               <ArrowRight size={16} />
             </button>

@@ -17,7 +17,7 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
-anchor-lang = "0.31.0"
+anchor-lang = "0.31.1"
 ark-bn254 = "0.5.0"
 ark-serialize = "0.5.0"
 groth16-solana = "0.0.3"

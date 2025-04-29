@@ -1,4 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
+// @ts-expect-error: ffjavascript does not have type definition.
 import * as ff from "ffjavascript";
 import { poseidonHash, toHex } from "./utils";
 

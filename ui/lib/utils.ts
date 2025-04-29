@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import * as circomlibjs from "circomlibjs";
+// @ts-expect-error: ffjavascript does not have type definition.
 import * as ff from "ffjavascript";
 
 export const generateRandomNumber = (nBytes: number): bigint => {
