@@ -1,7 +1,7 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Cluster, PublicKey } from "@solana/web3.js";
 import HushIDL from "./idl.json";
-import type { Hush } from "./types.ts";
+import type { Hush } from "./types";
 
 // Re-export the generated IDL and type
 export { Hush, HushIDL };

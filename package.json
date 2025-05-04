@@ -1,7 +1,8 @@
 {
   "license": "ISC",
   "scripts": {
-    "circuits:build": "./scripts/build_circuits.sh"
+    "circuits:build": "./scripts/build_circuits.sh",
+    "ops": "ts-node ./scripts/ops.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.31.0",
