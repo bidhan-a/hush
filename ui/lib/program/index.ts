@@ -10,7 +10,10 @@ export { Hush, HushIDL };
 export const HUSH_PROGRAM_ID = new PublicKey(HushIDL.address);
 
 // Helper function to get the Hush Anchor program.
-export function getHushProgram(provider: AnchorProvider, address?: PublicKey) {
+export function getHushProgram(
+  provider: AnchorProvider,
+  address?: PublicKey
+): Program<Hush> {
   return new Program(
     {
       ...HushIDL,

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import * as anchor from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TOKENS } from "@/constants";
@@ -8,7 +14,13 @@ import { Pool, PoolStats, Token } from "@/types";
 import { generateRandomNumber } from "@/lib/utils";
 import Deposit from "@/lib/deposit";
 // import { getSnarkProof } from "../../lib/proof";
-import { getHushProgramId } from "@/lib/program";
+import { getHushProgram, Hush } from "@/lib/program";
+import {
+  AnchorWallet,
+  useAnchorWallet,
+  useConnection,
+} from "@solana/wallet-adapter-react";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 
 interface AppContext {
   selectedToken: Token;
@@ -49,6 +61,27 @@ export const AppContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { connection } = useConnection();
+  const anchorWallet: AnchorWallet | undefined = useAnchorWallet();
+
+  const anchorProvider: AnchorProvider | undefined = useMemo(() => {
+    if (anchorWallet) {
+      return new AnchorProvider(connection, anchorWallet, {
+        commitment: "confirmed",
+      });
+    } else {
+      return undefined;
+    }
+  }, [connection, anchorWallet]);
+
+  const hushProgram: Program<Hush> | undefined = useMemo(() => {
+    if (anchorProvider) {
+      return getHushProgram(anchorProvider);
+    } else {
+      return undefined;
+    }
+  }, [anchorProvider]);
+
   const [selectedToken, setSelectedToken] = useState(
     initialState.selectedToken
   );
@@ -74,19 +107,20 @@ export const AppContextProvider = ({
     try {
       setDepositNoteGenerating(true);
 
-      const programId = getHushProgramId("devnet");
-      const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
-      const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
-        programId
-      );
+      if (hushProgram) {
+        const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
+        const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+          hushProgram.programId
+        );
 
-      const nullifier = generateRandomNumber(31);
-      const secret = generateRandomNumber(31);
-      const deposit = await Deposit.create(poolAccount, nullifier, secret);
-      const depositNote = Deposit.generateNote(deposit);
+        const nullifier = generateRandomNumber(31);
+        const secret = generateRandomNumber(31);
+        const deposit = await Deposit.create(poolAccount, nullifier, secret);
+        const depositNote = Deposit.generateNote(deposit);
 
-      setDepositNote(depositNote);
+        setDepositNote(depositNote);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -94,11 +128,39 @@ export const AppContextProvider = ({
     }
   };
 
+  const selectToken = (token: Token) => {
+    setSelectedToken(token);
+    setSelectedPool(token.pools[0]);
+  };
+
   useEffect(() => {
     if (selectedPool) {
       const fetchPoolStats = async () => {
         setSelectedPoolStatsLoading(true);
-        // TODO: Get pool stats from on-chain PDA.
+        if (anchorProvider && hushProgram) {
+          const poolAmount = new anchor.BN(
+            selectedPool.type * LAMPORTS_PER_SOL
+          );
+          const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+            hushProgram.programId
+          );
+          const [vaultAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("vault"), poolAccount.toBuffer()],
+            hushProgram.programId
+          );
+          const balance = await anchorProvider.connection.getBalance(
+            vaultAccount
+          );
+          console.log(balance);
+          const poolState = await hushProgram.account.poolState.fetch(
+            poolAccount
+          );
+          if (poolState) {
+            console.log(poolState);
+            // TODO: Get pool stats from on-chain PDA.
+          }
+        }
         setTimeout(() => {
           setSelectedPoolStats({
             totalValue: Math.floor(Math.random() * 1000000),
@@ -111,12 +173,7 @@ export const AppContextProvider = ({
 
       fetchPoolStats();
     }
-  }, [selectedPool, selectedToken]);
-
-  const selectToken = (token: Token) => {
-    setSelectedToken(token);
-    setSelectedPool(token.pools[0]);
-  };
+  }, [selectedPool, selectedToken, anchorProvider, hushProgram]);
 
   return (
     <AppContext.Provider
