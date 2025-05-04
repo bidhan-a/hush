@@ -208,6 +208,8 @@ describe("hush", () => {
         Buffer.from(pool.lastCommitment)
       ) === 0
     );
+    assert.ok(pool.deposits === 1);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
 
     // Check deposit state.
     const deposit = await program.account.depositState.fetch(depositAccount);
@@ -286,6 +288,8 @@ describe("hush", () => {
         Buffer.from(pool.lastCommitment)
       ) === 0
     );
+    assert.ok(pool.deposits === 2);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
 
     // Check deposit state.
     const deposit = await program.account.depositState.fetch(deposit2Account);
@@ -334,14 +338,17 @@ describe("hush", () => {
       .signers([withdrawerXKeypair])
       .rpc();
 
-    // Re-fetch pool.
-    pool = await program.account.poolState.fetch(poolAccount);
-
     // Check if amount was transferred to withdrawer.
     const vaultBalanceAfter = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Re-fetch pool.
+
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.withdrawals === 1);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
 
     // Check withdraw state.
     const withdraw = await program.account.withdrawState.fetch(withdrawAccount);
@@ -484,14 +491,16 @@ describe("hush", () => {
       .signers([withdrawerYKeypair])
       .rpc();
 
-    // Re-fetch pool.
-    pool = await program.account.poolState.fetch(poolAccount);
-
     // Check if amount was transferred to withdrawer.
     const vaultBalanceAfter = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Re-fetch pool.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.withdrawals === 2);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
 
     // Check withdraw state.
     const withdraw = await program.account.withdrawState.fetch(

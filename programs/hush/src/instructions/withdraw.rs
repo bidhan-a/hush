@@ -18,6 +18,7 @@ pub struct Withdraw<'info> {
     pub config: Box<Account<'info, ConfigState>>,
 
     #[account(
+        mut,
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
         bump=pool.pool_bump,
     )]
@@ -75,6 +76,10 @@ impl<'info> Withdraw<'info> {
             self.system_program.to_account_info(),
             Some(signer_seeds),
         )?;
+
+        // Update pool state.
+        self.pool.withdrawals += 1;
+        self.pool.total_value -= amount;
 
         // Set withdraw state.
         self.withdraw.set_inner(WithdrawState {

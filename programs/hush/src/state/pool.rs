@@ -8,6 +8,9 @@ use crate::constants::{ROOT_HISTORY_SIZE, TREE_HEIGHT};
 pub struct PoolState {
     pub amount: u64,
     pub next_index: u32,
+    pub deposits: u32,
+    pub withdrawals: u32,
+    pub total_value: u64,
     pub merkle_roots: [[u8; 32]; ROOT_HISTORY_SIZE],
     pub current_merkle_root_index: u8,
     pub filled_subtrees: [[u8; 32]; TREE_HEIGHT],

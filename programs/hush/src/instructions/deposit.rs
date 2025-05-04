@@ -89,6 +89,8 @@ impl<'info> Deposit<'info> {
         // Update the incremental Merkle tree with the new leaf.
         self.pool.update_merkle_tree(commitment)?;
         self.pool.next_index += 1;
+        self.pool.deposits += 1;
+        self.pool.total_value += amount;
 
         // Set deposit state.
         self.deposit.set_inner(DepositState {

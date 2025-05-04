@@ -38,6 +38,9 @@ impl<'info> CreatePool<'info> {
     pub fn create_pool(&mut self, amount: u64, bumps: &CreatePoolBumps) -> Result<()> {
         self.pool.amount = amount;
         self.pool.next_index = 0;
+        self.pool.deposits = 0;
+        self.pool.withdrawals = 0;
+        self.pool.total_value = 0;
         self.pool.last_commitment = None;
         self.pool.pool_bump = bumps.pool;
         self.pool.vault_bump = bumps.vault;
