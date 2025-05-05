@@ -12,9 +12,14 @@ const Mixer = () => {
     depositCreating,
     depositNote,
     depositNoteGenerating,
+    withdrawalRecipientAddress,
+    setWithdrawalRecipientAddress,
+    withdrawalNote,
+    setWithdrawalNote,
+    createWithdrawal,
+    withdrawalCreating,
   } = useApp();
   const [tab, setTab] = useState("deposit");
-  const [recipient, setRecipient] = useState("");
 
   // Generate a deposit note.
   const generateNote = () => {
@@ -119,8 +124,8 @@ const Mixer = () => {
               </label>
               <input
                 type="text"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
+                value={withdrawalRecipientAddress}
+                onChange={(e) => setWithdrawalRecipientAddress(e.target.value)}
                 placeholder="Enter Solana wallet address"
                 className="w-full bg-gray-900 rounded-lg p-3 outline-none"
               />
@@ -132,12 +137,22 @@ const Mixer = () => {
               </label>
               <input
                 type="text"
+                value={withdrawalNote}
+                onChange={(e) => setWithdrawalNote(e.target.value)}
                 placeholder="Paste your deposit note here"
                 className="w-full bg-gray-900 rounded-lg p-3 outline-none"
               />
             </div>
 
-            <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2 cursor-pointer">
+            <button
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2 cursor-pointer"
+              onClick={createWithdrawal}
+              disabled={
+                !withdrawalNote ||
+                !withdrawalRecipientAddress ||
+                withdrawalCreating
+              }
+            >
               <span>
                 Withdraw {selectedPool.type} {selectedToken.type}
               </span>

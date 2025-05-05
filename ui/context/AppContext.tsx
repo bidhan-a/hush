@@ -21,6 +21,7 @@ import {
   useConnection,
 } from "@solana/wallet-adapter-react";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { getSnarkProof } from "@/lib/proof";
 
 interface AppContext {
   selectedToken: Token;
@@ -31,14 +32,16 @@ interface AppContext {
   depositNote: string;
   depositNoteGenerating: boolean;
   depositCreating: boolean;
-  withdrawRecipientAddress: string;
-  withdrawNote: string;
+  withdrawalRecipientAddress: string;
+  withdrawalNote: string;
+  withdrawalCreating: boolean;
   selectToken: (token: Token) => void;
   selectPool: (pool: Pool) => void;
   generateDepositNote: () => Promise<void>;
   createDeposit: () => Promise<void>;
-  setWithdrawRecipientAddress: (address: string) => void;
-  setWithdrawNote: (note: string) => void;
+  setWithdrawalRecipientAddress: (address: string) => void;
+  setWithdrawalNote: (note: string) => void;
+  createWithdrawal: () => void;
 }
 
 const initialState: AppContext = {
@@ -50,14 +53,16 @@ const initialState: AppContext = {
   depositNote: "",
   depositNoteGenerating: false,
   depositCreating: false,
-  withdrawRecipientAddress: "",
-  withdrawNote: "",
+  withdrawalRecipientAddress: "",
+  withdrawalNote: "",
+  withdrawalCreating: false,
   selectToken: () => undefined,
   selectPool: () => undefined,
   generateDepositNote: async () => undefined,
   createDeposit: async () => undefined,
-  setWithdrawRecipientAddress: () => undefined,
-  setWithdrawNote: () => undefined,
+  setWithdrawalRecipientAddress: () => undefined,
+  setWithdrawalNote: () => undefined,
+  createWithdrawal: () => undefined,
 };
 
 export const AppContext = createContext<AppContext>(initialState);
@@ -108,10 +113,15 @@ export const AppContextProvider = ({
     initialState.depositCreating
   );
 
-  const [withdrawRecipientAddress, setWithdrawRecipientAddress] = useState(
-    initialState.withdrawRecipientAddress
+  const [withdrawalRecipientAddress, setWithdrawalRecipientAddress] = useState(
+    initialState.withdrawalRecipientAddress
   );
-  const [withdrawNote, setWithdrawNote] = useState(initialState.withdrawNote);
+  const [withdrawalNote, setWithdrawalNote] = useState(
+    initialState.withdrawalNote
+  );
+  const [withdrawalCreating, setWithdrawalCreating] = useState(
+    initialState.withdrawalCreating
+  );
 
   const generateDepositNote = async () => {
     try {
@@ -149,12 +159,12 @@ export const AppContextProvider = ({
           [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
           hushProgram.programId
         );
-
-        // Get the last deposit (if available).
-        let lastDeposit = null;
         const poolState = await hushProgram.account.poolState.fetch(
           poolAccount
         );
+
+        // Get the last deposit (if available).
+        let lastDeposit = null;
         if (poolState.lastCommitment) {
           [lastDeposit] = anchor.web3.PublicKey.findProgramAddressSync(
             [
@@ -188,6 +198,85 @@ export const AppContextProvider = ({
       console.error(e);
     } finally {
       setDepositCreating(false);
+    }
+  };
+
+  const createWithdrawal = async () => {
+    try {
+      setWithdrawalCreating(true);
+
+      if (
+        anchorProvider &&
+        hushProgram &&
+        withdrawalRecipientAddress &&
+        withdrawalNote
+      ) {
+        const withdrawalRecipientPublicKey = new anchor.web3.PublicKey(
+          withdrawalRecipientAddress
+        );
+        // Parse deposit note.
+        const deposit = await Deposit.parseNote(withdrawalNote);
+        console.log(deposit);
+
+        // Fetch PDA states.
+        const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
+        const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+          hushProgram.programId
+        );
+        const poolState = await hushProgram.account.poolState.fetch(
+          poolAccount
+        );
+
+        const [depositAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [
+            Buffer.from("deposit"),
+            poolAccount.toBuffer(),
+            deposit.commitmentHash,
+          ],
+          hushProgram.programId
+        );
+        const depositState = await hushProgram.account.depositState.fetch(
+          depositAccount
+        );
+
+        // Create ZK proof.
+        const merkleRoot =
+          poolState.merkleRoots[poolState.currentMerkleRootIndex];
+        const proof = await getSnarkProof(
+          deposit,
+          new Uint8Array(merkleRoot),
+          poolState.filledSubtrees.map((v) => new Uint8Array(v)),
+          depositState.index,
+          new Uint8Array(depositState.index)
+        );
+
+        // Create withdrawal.
+        await hushProgram.methods
+          .withdraw(
+            poolAmount,
+            Array.from(deposit.nullifierHash),
+            Array.from(merkleRoot),
+            Array.from(proof)
+          )
+          .accountsPartial({
+            withdrawer: withdrawalRecipientPublicKey,
+            pool: poolAccount,
+          })
+          .rpc();
+
+        // Clean up withdrawal details.
+        setWithdrawalRecipientAddress("");
+        setWithdrawalNote("");
+
+        // TODO: Show toast notification.
+
+        // TODO: Refresh pool state.
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setWithdrawalCreating(false);
     }
   };
 
@@ -236,14 +325,16 @@ export const AppContextProvider = ({
         depositNote,
         depositNoteGenerating,
         depositCreating,
-        withdrawRecipientAddress,
-        withdrawNote,
+        withdrawalRecipientAddress,
+        withdrawalNote,
         selectToken,
         selectPool: setSelectedPool,
         generateDepositNote,
         createDeposit,
-        setWithdrawRecipientAddress,
-        setWithdrawNote,
+        setWithdrawalRecipientAddress,
+        setWithdrawalNote,
+        withdrawalCreating,
+        createWithdrawal,
       }}
     >
       {children}
