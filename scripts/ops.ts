@@ -50,5 +50,9 @@ const createPool = async (poolAmount: number) => {
   }
 };
 
-createConfig();
-createPool(1);
+const initialSetup = async () => {
+  await createConfig();
+  await createPool(1);
+};
+
+initialSetup();

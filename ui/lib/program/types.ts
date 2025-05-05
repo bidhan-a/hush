@@ -243,6 +243,7 @@ export type Hush = {
         },
         {
           name: "pool";
+          writable: true;
           pda: {
             seeds: [
               {
@@ -458,6 +459,18 @@ export type Hush = {
           {
             name: "nextIndex";
             type: "u32";
+          },
+          {
+            name: "deposits";
+            type: "u32";
+          },
+          {
+            name: "withdrawals";
+            type: "u32";
+          },
+          {
+            name: "totalValue";
+            type: "u64";
           },
           {
             name: "merkleRoots";

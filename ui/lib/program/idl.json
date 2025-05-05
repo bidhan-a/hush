@@ -237,6 +237,7 @@
         },
         {
           "name": "pool",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -452,6 +453,18 @@
           {
             "name": "next_index",
             "type": "u32"
+          },
+          {
+            "name": "deposits",
+            "type": "u32"
+          },
+          {
+            "name": "withdrawals",
+            "type": "u32"
+          },
+          {
+            "name": "total_value",
+            "type": "u64"
           },
           {
             "name": "merkle_roots",

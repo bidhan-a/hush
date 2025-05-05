@@ -145,30 +145,18 @@ export const AppContextProvider = ({
             [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
             hushProgram.programId
           );
-          const [vaultAccount] = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("vault"), poolAccount.toBuffer()],
-            hushProgram.programId
-          );
-          const balance = await anchorProvider.connection.getBalance(
-            vaultAccount
-          );
-          console.log(balance);
           const poolState = await hushProgram.account.poolState.fetch(
             poolAccount
           );
           if (poolState) {
-            console.log(poolState);
-            // TODO: Get pool stats from on-chain PDA.
+            setSelectedPoolStats({
+              totalValue: poolState.totalValue.toNumber() / LAMPORTS_PER_SOL,
+              deposits: poolState.deposits,
+              withdrawals: poolState.withdrawals,
+            });
           }
-        }
-        setTimeout(() => {
-          setSelectedPoolStats({
-            totalValue: Math.floor(Math.random() * 1000000),
-            deposits: Math.floor(Math.random() * 1000),
-            withdrawals: Math.floor(Math.random() * 1000),
-          });
           setSelectedPoolStatsLoading(false);
-        }, 5000);
+        }
       };
 
       fetchPoolStats();
