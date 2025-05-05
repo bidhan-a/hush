@@ -8,6 +8,8 @@ const Mixer = () => {
     selectedToken,
     selectedPool,
     generateDepositNote,
+    createDeposit,
+    depositCreating,
     depositNote,
     depositNoteGenerating,
   } = useApp();
@@ -98,7 +100,10 @@ const Mixer = () => {
                   ? "bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
                   : "bg-gray-700 cursor-not-allowed"
               }`}
-              disabled={!depositNote || depositNoteGenerating}
+              onClick={createDeposit}
+              disabled={
+                !depositNote || depositNoteGenerating || depositCreating
+              }
             >
               <span>
                 Deposit {selectedPool.type} {selectedToken.type}

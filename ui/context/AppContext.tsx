@@ -12,7 +12,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TOKENS } from "@/constants";
 import { Pool, PoolStats, Token } from "@/types";
 import { generateRandomNumber } from "@/lib/utils";
-import Deposit from "@/lib/deposit";
+import Deposit, { IDeposit } from "@/lib/deposit";
 // import { getSnarkProof } from "../../lib/proof";
 import { getHushProgram, Hush } from "@/lib/program";
 import {
@@ -27,13 +27,16 @@ interface AppContext {
   selectedPool: Pool;
   selectedPoolStats: PoolStats;
   selectedPoolStatsLoading: boolean;
+  deposit?: IDeposit;
   depositNote: string;
   depositNoteGenerating: boolean;
+  depositCreating: boolean;
   withdrawRecipientAddress: string;
   withdrawNote: string;
   selectToken: (token: Token) => void;
   selectPool: (pool: Pool) => void;
   generateDepositNote: () => Promise<void>;
+  createDeposit: () => Promise<void>;
   setWithdrawRecipientAddress: (address: string) => void;
   setWithdrawNote: (note: string) => void;
 }
@@ -43,13 +46,16 @@ const initialState: AppContext = {
   selectedPool: TOKENS[0].pools[0],
   selectedPoolStats: { totalValue: 0, deposits: 0, withdrawals: 0 },
   selectedPoolStatsLoading: true,
+  deposit: undefined,
   depositNote: "",
   depositNoteGenerating: false,
+  depositCreating: false,
   withdrawRecipientAddress: "",
   withdrawNote: "",
   selectToken: () => undefined,
   selectPool: () => undefined,
   generateDepositNote: async () => undefined,
+  createDeposit: async () => undefined,
   setWithdrawRecipientAddress: () => undefined,
   setWithdrawNote: () => undefined,
 };
@@ -93,9 +99,13 @@ export const AppContextProvider = ({
     initialState.selectedPoolStatsLoading
   );
 
+  const [deposit, setDeposit] = useState(initialState.deposit);
   const [depositNote, setDepositNote] = useState(initialState.depositNote);
   const [depositNoteGenerating, setDepositNoteGenerating] = useState(
     initialState.depositNoteGenerating
+  );
+  const [depositCreating, setDepositCreating] = useState(
+    initialState.depositCreating
   );
 
   const [withdrawRecipientAddress, setWithdrawRecipientAddress] = useState(
@@ -119,12 +129,65 @@ export const AppContextProvider = ({
         const deposit = await Deposit.create(poolAccount, nullifier, secret);
         const depositNote = Deposit.generateNote(deposit);
 
+        setDeposit(deposit);
         setDepositNote(depositNote);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setDepositNoteGenerating(false);
+    }
+  };
+
+  const createDeposit = async () => {
+    try {
+      setDepositCreating(true);
+
+      if (anchorProvider && hushProgram && deposit) {
+        const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
+        const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+          hushProgram.programId
+        );
+
+        // Get the last deposit (if available).
+        let lastDeposit = null;
+        const poolState = await hushProgram.account.poolState.fetch(
+          poolAccount
+        );
+        if (poolState.lastCommitment) {
+          [lastDeposit] = anchor.web3.PublicKey.findProgramAddressSync(
+            [
+              Buffer.from("deposit"),
+              poolAccount.toBuffer(),
+              new Uint8Array(poolState.lastCommitment),
+            ],
+            hushProgram.programId
+          );
+        }
+
+        // Create deposit.
+        await hushProgram.methods
+          .deposit(poolAmount, Array.from(deposit.commitmentHash))
+          .accountsPartial({
+            depositor: anchorProvider.publicKey,
+            lastDeposit,
+            pool: poolAccount,
+          })
+          .rpc();
+
+        // Clean up deposit.
+        setDeposit(undefined);
+        setDepositNote("");
+
+        // TODO: Show toast notification.
+
+        // TODO: Refresh pool state.
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDepositCreating(false);
     }
   };
 
@@ -172,11 +235,13 @@ export const AppContextProvider = ({
         selectedPoolStatsLoading,
         depositNote,
         depositNoteGenerating,
+        depositCreating,
         withdrawRecipientAddress,
         withdrawNote,
         selectToken,
         selectPool: setSelectedPool,
         generateDepositNote,
+        createDeposit,
         setWithdrawRecipientAddress,
         setWithdrawNote,
       }}
