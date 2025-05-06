@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as snarkjs from "snarkjs";
+// @ts-expect-error: ffjavascript does not have type definition.
 import * as ff from "ffjavascript";
 import { IDeposit } from "./deposit";
 
@@ -87,7 +89,7 @@ const ZERO_VALUES: Uint8Array[] = [
   ]),
 ];
 
-const concatenateUint8Arrays = (arrays) => {
+const concatenateUint8Arrays = (arrays: any[]) => {
   // Calculate total length
   const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
   // Create new array with total length
@@ -140,8 +142,8 @@ const getMerklePath = (
 ) => {
   let index = leafIndex;
 
-  let pathElements: Uint8Array[] = [];
-  let pathIndices: number[] = [];
+  const pathElements: Uint8Array[] = [];
+  const pathIndices: number[] = [];
 
   for (let level = 0; level < TREE_HEIGHT; level++) {
     const isRightNode = index % 2 === 1;
