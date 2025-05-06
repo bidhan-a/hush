@@ -2,6 +2,7 @@
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -9,11 +10,11 @@ import React, {
 } from "react";
 import * as anchor from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { toast } from "react-hot-toast";
 import { TOKENS } from "@/constants";
 import { Pool, PoolStats, Token } from "@/types";
 import { generateRandomNumber } from "@/lib/utils";
 import Deposit, { IDeposit } from "@/lib/deposit";
-// import { getSnarkProof } from "../../lib/proof";
 import { getHushProgram, Hush } from "@/lib/program";
 import {
   AnchorWallet,
@@ -123,6 +124,36 @@ export const AppContextProvider = ({
     initialState.withdrawalCreating
   );
 
+  const fetchPoolStats = useCallback(async () => {
+    setSelectedPoolStatsLoading(true);
+    if (anchorProvider && hushProgram && selectedPool) {
+      try {
+        const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
+        const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+          hushProgram.programId
+        );
+        const poolState = await hushProgram.account.poolState.fetch(
+          poolAccount
+        );
+        if (poolState) {
+          setSelectedPoolStats({
+            totalValue: poolState.totalValue.toNumber() / LAMPORTS_PER_SOL,
+            deposits: poolState.deposits,
+            withdrawals: poolState.withdrawals,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching pool stats:", error);
+        toast.error("Could not fetch pool statistics.", { duration: 5000 });
+      } finally {
+        setSelectedPoolStatsLoading(false);
+      }
+    } else {
+      setSelectedPoolStatsLoading(false);
+    }
+  }, [anchorProvider, hushProgram, selectedPool]);
+
   const generateDepositNote = async () => {
     try {
       setDepositNoteGenerating(true);
@@ -190,12 +221,15 @@ export const AppContextProvider = ({
         setDeposit(undefined);
         setDepositNote("");
 
-        // TODO: Show toast notification.
+        // Show toast notification.
+        toast.success("Deposited to pool successfully.", { duration: 5000 });
 
-        // TODO: Refresh pool state.
+        // Refresh pool state.
+        fetchPoolStats();
       }
     } catch (e) {
       console.error(e);
+      toast.error("Failed to deposit. Please try again.", { duration: 5000 });
     } finally {
       setDepositCreating(false);
     }
@@ -216,7 +250,6 @@ export const AppContextProvider = ({
         );
         // Parse deposit note.
         const deposit = await Deposit.parseNote(withdrawalNote);
-        console.log(deposit);
 
         // Fetch PDA states.
         const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
@@ -248,7 +281,7 @@ export const AppContextProvider = ({
           new Uint8Array(merkleRoot),
           poolState.filledSubtrees.map((v) => new Uint8Array(v)),
           depositState.index,
-          new Uint8Array(depositState.index)
+          new Uint8Array(depositState.siblingCommitment!)
         );
 
         // Create withdrawal.
@@ -269,12 +302,15 @@ export const AppContextProvider = ({
         setWithdrawalRecipientAddress("");
         setWithdrawalNote("");
 
-        // TODO: Show toast notification.
+        // Show toast notification.
+        toast.success("Withdrawn from pool successfully.", { duration: 5000 });
 
-        // TODO: Refresh pool state.
+        // Refresh pool state.
+        fetchPoolStats();
       }
     } catch (e) {
       console.error(e);
+      toast.error("Failed to withdraw. Please try again.", { duration: 5000 });
     } finally {
       setWithdrawalCreating(false);
     }
@@ -286,34 +322,10 @@ export const AppContextProvider = ({
   };
 
   useEffect(() => {
-    if (selectedPool) {
-      const fetchPoolStats = async () => {
-        setSelectedPoolStatsLoading(true);
-        if (anchorProvider && hushProgram) {
-          const poolAmount = new anchor.BN(
-            selectedPool.type * LAMPORTS_PER_SOL
-          );
-          const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
-            hushProgram.programId
-          );
-          const poolState = await hushProgram.account.poolState.fetch(
-            poolAccount
-          );
-          if (poolState) {
-            setSelectedPoolStats({
-              totalValue: poolState.totalValue.toNumber() / LAMPORTS_PER_SOL,
-              deposits: poolState.deposits,
-              withdrawals: poolState.withdrawals,
-            });
-          }
-          setSelectedPoolStatsLoading(false);
-        }
-      };
-
+    if (selectedPool && selectedToken) {
       fetchPoolStats();
     }
-  }, [selectedPool, selectedToken, anchorProvider, hushProgram]);
+  }, [selectedPool, selectedToken, fetchPoolStats]);
 
   return (
     <AppContext.Provider

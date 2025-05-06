@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { AppContextProvider } from "@/context/AppContext";
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Toaster position="bottom-right" />
         <SolanaWalletProvider>
           <AppContextProvider>
             <Navbar />
