@@ -23,6 +23,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { getSnarkProof } from "@/lib/proof";
+import { saveCommitment, saveTransaction } from "@/app/actions";
 
 interface AppContext {
   selectedToken: Token;
@@ -208,7 +209,7 @@ export const AppContextProvider = ({
         }
 
         // Create deposit.
-        await hushProgram.methods
+        const txHash = await hushProgram.methods
           .deposit(poolAmount, Array.from(deposit.commitmentHash))
           .accountsPartial({
             depositor: anchorProvider.publicKey,
@@ -216,6 +217,14 @@ export const AppContextProvider = ({
             pool: poolAccount,
           })
           .rpc();
+
+        // Save commit and transaction in DB.
+        await saveCommitment(poolState.nextIndex, deposit.commitmentHash);
+        await saveTransaction(
+          anchorProvider.publicKey.toString(),
+          txHash,
+          true
+        );
 
         // Clean up deposit.
         setDeposit(undefined);
@@ -285,7 +294,7 @@ export const AppContextProvider = ({
         );
 
         // Create withdrawal.
-        await hushProgram.methods
+        const txHash = await hushProgram.methods
           .withdraw(
             poolAmount,
             Array.from(deposit.nullifierHash),
@@ -297,6 +306,13 @@ export const AppContextProvider = ({
             pool: poolAccount,
           })
           .rpc();
+
+        // Save transaction in DB.
+        await saveTransaction(
+          anchorProvider.publicKey.toString(),
+          txHash,
+          false
+        );
 
         // Clean up withdrawal details.
         setWithdrawalRecipientAddress("");
