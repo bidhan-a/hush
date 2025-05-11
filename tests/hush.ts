@@ -28,12 +28,18 @@ describe("hush", () => {
   let withdrawAccount: anchor.web3.PublicKey;
   let deposit2Account: anchor.web3.PublicKey;
   let withdraw2Account: anchor.web3.PublicKey;
+  let deposit3Account: anchor.web3.PublicKey;
+  let withdraw3Account: anchor.web3.PublicKey;
+  let deposit4Account: anchor.web3.PublicKey;
+  let withdraw4Account: anchor.web3.PublicKey;
 
   // Test values.
   const feeBasisPoints = 100; // 1%.
   const poolAmount = new anchor.BN(1 * LAMPORTS_PER_SOL); // 1 SOL pool.
   let testDeposit: IDeposit;
   let testDeposit2: IDeposit;
+  let testDeposit3: IDeposit;
+  let testDeposit4: IDeposit;
 
   before(async () => {
     const latestBlockhash = await provider.connection.getLatestBlockhash();
@@ -141,6 +147,32 @@ describe("hush", () => {
         Buffer.from("withdraw"),
         poolAccount.toBuffer(),
         testDeposit2.nullifierHash,
+      ],
+      program.programId
+    );
+
+    // Deposit 3.
+    const nullifier3 = generateRandomNumber(31);
+    const secret3 = generateRandomNumber(31);
+    testDeposit3 = await Deposit.create(poolAccount, nullifier3, secret3);
+    [deposit3Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("deposit"),
+        poolAccount.toBuffer(),
+        testDeposit3.commitmentHash,
+      ],
+      program.programId
+    );
+
+    // Deposit 4.
+    const nullifier4 = generateRandomNumber(31);
+    const secret4 = generateRandomNumber(31);
+    testDeposit4 = await Deposit.create(poolAccount, nullifier4, secret4);
+    [deposit4Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("deposit"),
+        poolAccount.toBuffer(),
+        testDeposit4.commitmentHash,
       ],
       program.programId
     );
@@ -305,6 +337,132 @@ describe("hush", () => {
       ) === 0
     );
     assert.ok(deposit.index === 1);
+  });
+
+  it("[deposit] depositor Y creates a second deposit", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+
+    let lastDeposit = null;
+    let pool = await program.account.poolState.fetch(poolAccount);
+    if (pool.lastCommitment) {
+      [lastDeposit] = anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("deposit"),
+          poolAccount.toBuffer(),
+          new Uint8Array(pool.lastCommitment),
+        ],
+        program.programId
+      );
+    }
+
+    await program.methods
+      .deposit(poolAmount, Array.from(testDeposit3.commitmentHash))
+      .accountsPartial({
+        depositor: depositorYKeypair.publicKey,
+        lastDeposit: lastDeposit,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([depositorYKeypair])
+      .rpc();
+
+    // Check if amount was transferred to vault.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
+
+    // Check pool state.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.nextIndex === 3);
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(testDeposit3.commitmentHash),
+        Buffer.from(pool.lastCommitment)
+      ) === 0
+    );
+    assert.ok(pool.deposits === 3);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
+
+    // Check deposit state.
+    const deposit = await program.account.depositState.fetch(deposit3Account);
+    assert.ok(deposit.pool.toString() === poolAccount.toString());
+    assert.ok(
+      deposit.from.toString() === depositorYKeypair.publicKey.toString()
+    );
+    assert.ok(deposit.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(deposit.commitment),
+        Buffer.from(testDeposit3.commitmentHash)
+      ) === 0
+    );
+    assert.ok(deposit.index === 2);
+  });
+
+  it("[deposit] depositor Y creates a third deposit", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+
+    let lastDeposit = null;
+    let pool = await program.account.poolState.fetch(poolAccount);
+    if (pool.lastCommitment) {
+      [lastDeposit] = anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("deposit"),
+          poolAccount.toBuffer(),
+          new Uint8Array(pool.lastCommitment),
+        ],
+        program.programId
+      );
+    }
+
+    await program.methods
+      .deposit(poolAmount, Array.from(testDeposit4.commitmentHash))
+      .accountsPartial({
+        depositor: depositorYKeypair.publicKey,
+        lastDeposit: lastDeposit,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([depositorYKeypair])
+      .rpc();
+
+    // Check if amount was transferred to vault.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
+
+    // Check pool state.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.nextIndex === 4);
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(testDeposit4.commitmentHash),
+        Buffer.from(pool.lastCommitment)
+      ) === 0
+    );
+    assert.ok(pool.deposits === 4);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
+
+    // Check deposit state.
+    const deposit = await program.account.depositState.fetch(deposit4Account);
+    assert.ok(deposit.pool.toString() === poolAccount.toString());
+    assert.ok(
+      deposit.from.toString() === depositorYKeypair.publicKey.toString()
+    );
+    assert.ok(deposit.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(deposit.commitment),
+        Buffer.from(testDeposit4.commitmentHash)
+      ) === 0
+    );
+    assert.ok(deposit.index === 3);
   });
 
   it("[withdraw] withdrawer X creates a withdrawal", async () => {
@@ -520,6 +678,10 @@ describe("hush", () => {
   });
 
   after(async () => {
-    await globalThis.curve_bn128.terminate();
+    try {
+      await globalThis.curve_bn128.terminate();
+    } catch (error) {
+      // ignore
+    }
   });
 });
