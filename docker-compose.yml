@@ -1,0 +1,11 @@
+version: '3'
+services:
+  db:
+    container_name: db
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=hush
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432

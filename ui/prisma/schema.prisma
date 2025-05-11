@@ -1,0 +1,29 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../app/generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("POSTGRES_DB_URL")
+}
+
+enum TransactionType {
+    DEPOSIT
+    WITHDRAW
+}
+
+model Commitment {
+    id         Int      @id @default(autoincrement())
+    index      Int      @unique
+    commitment Bytes    @unique
+    createdAt  DateTime @default(now()) @map(name: "created_at")
+}
+
+model Transaction {
+    id        Int             @id @default(autoincrement())
+    txType    TransactionType @map(name: "tx_type")
+    address   String
+    txHash    String          @unique @map(name: "tx_hash")
+    createdAt DateTime        @default(now()) @map(name: "created_at")
+}
