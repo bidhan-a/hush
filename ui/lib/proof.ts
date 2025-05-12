@@ -2,7 +2,9 @@
 import * as snarkjs from "snarkjs";
 // @ts-expect-error: ffjavascript does not have type definition.
 import * as ff from "ffjavascript";
+import * as circomlibjs from "circomlibjs";
 import { IDeposit } from "./deposit";
+import { poseidonHash } from "./utils";
 
 const TREE_HEIGHT = 20;
 
@@ -135,32 +137,55 @@ const convertProofToBytes = (proof: {
   return allBytes;
 };
 
-const getMerklePath = (
-  leafIndex: number,
-  siblingCommitment: Uint8Array | null,
-  filledSubtrees: Uint8Array[]
-) => {
+const getMerklePath = async (leafIndex: number, leaves: Uint8Array[]) => {
   let index = leafIndex;
 
   const pathElements: Uint8Array[] = [];
   const pathIndices: number[] = [];
 
+  let currentLevelNodes = [...leaves];
+
+  // Create a poseidon hasher which can be reused.
+  const poseidonHasher = await circomlibjs.buildPoseidon();
+
   for (let level = 0; level < TREE_HEIGHT; level++) {
     const isRightNode = index % 2 === 1;
+    const siblingIndex = isRightNode ? index - 1 : index + 1;
 
-    if (level === 0 && siblingCommitment && siblingCommitment.length !== 0) {
-      // Use siblingCommitment at level 0
-      pathElements.push(siblingCommitment);
-    } else if (isRightNode) {
-      // If the node is RIGHT, use precomputed `filledSubtrees[level]`.
-      pathElements.push(filledSubtrees[level]);
+    // Add the sibling node to the path.
+    if (siblingIndex < currentLevelNodes.length) {
+      pathElements.push(currentLevelNodes[siblingIndex]);
     } else {
-      // If the node is LEFT, its right sibling is not in `filledSubtrees`, so use ZERO_VALUES instead
+      // Use ZERO_VALUES if the sibling node does not exist.
       pathElements.push(ZERO_VALUES[level]);
     }
 
+    // Record whether the current node is a left (0) or right (1) node.
     pathIndices.push(isRightNode ? 1 : 0);
+
+    // Move to the parent level.
     index = Math.floor(index / 2);
+
+    // Compute the parent level nodes
+    const parentLevelNodes: Uint8Array[] = [];
+    for (let i = 0; i < currentLevelNodes.length; i += 2) {
+      const leftNode = currentLevelNodes[i];
+      const rightNode =
+        i + 1 < currentLevelNodes.length
+          ? currentLevelNodes[i + 1]
+          : ZERO_VALUES[level];
+
+      // Hash the left and right nodes to compute the parent node
+      const leftNodeBigInt = ff.utils.leBuff2int(leftNode);
+      const rightNodeBigInt = ff.utils.leBuff2int(rightNode);
+      const hash = await poseidonHash(
+        [leftNodeBigInt, rightNodeBigInt],
+        poseidonHasher
+      );
+      parentLevelNodes.push(hash);
+    }
+
+    currentLevelNodes = parentLevelNodes;
   }
 
   return { pathElements, pathIndices };
@@ -169,15 +194,10 @@ const getMerklePath = (
 export const getSnarkProof = async (
   deposit: IDeposit,
   merkleRoot: Uint8Array,
-  filledSubtrees: Uint8Array[],
   leafIndex: number,
-  siblingCommitment: Uint8Array | null
+  leaves: Uint8Array[]
 ) => {
-  const { pathElements, pathIndices } = getMerklePath(
-    leafIndex,
-    siblingCommitment,
-    filledSubtrees
-  );
+  const { pathElements, pathIndices } = await getMerklePath(leafIndex, leaves);
 
   const input = {
     // Public inputs.

@@ -23,7 +23,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { getSnarkProof } from "@/lib/proof";
-import { saveCommitment, saveTransaction } from "@/app/actions";
+import { getCommitments, saveCommitment, saveTransaction } from "@/app/actions";
 
 interface AppContext {
   selectedToken: Token;
@@ -282,15 +282,18 @@ export const AppContextProvider = ({
           depositAccount
         );
 
+        // Get commitments.
+        const commitments = await getCommitments();
+        const leaves = commitments.map((c) => c.commitment);
+
         // Create ZK proof.
         const merkleRoot =
           poolState.merkleRoots[poolState.currentMerkleRootIndex];
         const proof = await getSnarkProof(
           deposit,
           new Uint8Array(merkleRoot),
-          poolState.filledSubtrees.map((v) => new Uint8Array(v)),
           depositState.index,
-          new Uint8Array(depositState.siblingCommitment!)
+          leaves
         );
 
         // Create withdrawal.

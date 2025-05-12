@@ -7,8 +7,13 @@ export const generateRandomNumber = (nBytes: number): bigint => {
   return BigInt("0x" + crypto.randomBytes(nBytes).toString("hex"));
 };
 
-export const poseidonHash = async (vals: bigint[]): Promise<Uint8Array> => {
-  const poseidon = await circomlibjs.buildPoseidon();
+export const poseidonHash = async (
+  vals: bigint[],
+  poseidonHasher?: circomlibjs.Poseidon
+): Promise<Uint8Array> => {
+  const poseidon = poseidonHasher
+    ? poseidonHasher
+    : await circomlibjs.buildPoseidon();
   const hash = poseidon(vals);
   const hashObj = poseidon.F.toObject(hash);
   const leBuff = ff.utils.leInt2Buff(hashObj, 32);

@@ -41,6 +41,9 @@ describe("hush", () => {
   let testDeposit3: IDeposit;
   let testDeposit4: IDeposit;
 
+  // Keeps track of commitments (needed to construct SNARK proof).
+  const commitments = [];
+
   before(async () => {
     const latestBlockhash = await provider.connection.getLatestBlockhash();
 
@@ -119,7 +122,6 @@ describe("hush", () => {
       ],
       program.programId
     );
-
     [withdrawAccount] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("withdraw"),
@@ -141,7 +143,6 @@ describe("hush", () => {
       ],
       program.programId
     );
-
     [withdraw2Account] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("withdraw"),
@@ -163,6 +164,14 @@ describe("hush", () => {
       ],
       program.programId
     );
+    [withdraw3Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("withdraw"),
+        poolAccount.toBuffer(),
+        testDeposit3.nullifierHash,
+      ],
+      program.programId
+    );
 
     // Deposit 4.
     const nullifier4 = generateRandomNumber(31);
@@ -173,6 +182,14 @@ describe("hush", () => {
         Buffer.from("deposit"),
         poolAccount.toBuffer(),
         testDeposit4.commitmentHash,
+      ],
+      program.programId
+    );
+    [withdraw4Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("withdraw"),
+        poolAccount.toBuffer(),
+        testDeposit4.nullifierHash,
       ],
       program.programId
     );
@@ -224,6 +241,8 @@ describe("hush", () => {
       })
       .signers([depositorXKeypair])
       .rpc();
+
+    commitments.push(testDeposit.commitmentHash);
 
     // Check if amount was transferred to vault.
     const vaultBalanceAfter = new anchor.BN(
@@ -305,6 +324,8 @@ describe("hush", () => {
       .signers([depositorYKeypair])
       .rpc();
 
+    commitments.push(testDeposit2.commitmentHash);
+
     // Check if amount was transferred to vault.
     const vaultBalanceAfter = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
@@ -367,6 +388,8 @@ describe("hush", () => {
       })
       .signers([depositorYKeypair])
       .rpc();
+
+    commitments.push(testDeposit3.commitmentHash);
 
     // Check if amount was transferred to vault.
     const vaultBalanceAfter = new anchor.BN(
@@ -431,6 +454,8 @@ describe("hush", () => {
       .signers([depositorYKeypair])
       .rpc();
 
+    commitments.push(testDeposit4.commitmentHash);
+
     // Check if amount was transferred to vault.
     const vaultBalanceAfter = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
@@ -476,9 +501,8 @@ describe("hush", () => {
     const proof = await getSnarkProof(
       testDeposit,
       new Uint8Array(merkleRoot),
-      pool.filledSubtrees.map((v) => new Uint8Array(v)),
       deposit.index,
-      new Uint8Array(deposit.siblingCommitment)
+      commitments
     );
 
     await program.methods
@@ -532,9 +556,8 @@ describe("hush", () => {
       const proof = await getSnarkProof(
         testDeposit,
         new Uint8Array(merkleRoot),
-        pool.filledSubtrees.map((v) => new Uint8Array(v)),
         deposit.index,
-        new Uint8Array(deposit.siblingCommitment)
+        commitments
       );
 
       await program.methods
@@ -593,9 +616,8 @@ describe("hush", () => {
       const proof = await getSnarkProof(
         testDeposit,
         new Uint8Array(merkleRoot),
-        pool.filledSubtrees.map((v) => new Uint8Array(v)),
         deposit.index,
-        new Uint8Array(deposit.siblingCommitment)
+        commitments
       );
 
       await program.methods
@@ -629,9 +651,8 @@ describe("hush", () => {
     const proof = await getSnarkProof(
       testDeposit2,
       new Uint8Array(merkleRoot),
-      pool.filledSubtrees.map((v) => new Uint8Array(v)),
       deposit.index,
-      new Uint8Array(deposit.siblingCommitment)
+      commitments
     );
 
     await program.methods
@@ -673,6 +694,122 @@ describe("hush", () => {
       Buffer.compare(
         Buffer.from(withdraw.nullifierHash),
         Buffer.from(testDeposit2.nullifierHash)
+      ) === 0
+    );
+  });
+
+  it("[withdraw] withdrawer Y creates a second withdrawal", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    let pool = await program.account.poolState.fetch(poolAccount);
+    const deposit = await program.account.depositState.fetch(deposit3Account);
+    const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
+
+    const proof = await getSnarkProof(
+      testDeposit3,
+      new Uint8Array(merkleRoot),
+      deposit.index,
+      commitments
+    );
+
+    await program.methods
+      .withdraw(
+        poolAmount,
+        Array.from(testDeposit3.nullifierHash),
+        Array.from(merkleRoot),
+        Array.from(proof)
+      )
+      .accountsPartial({
+        withdrawer: withdrawerYKeypair.publicKey,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([withdrawerYKeypair])
+      .rpc();
+
+    // Check if amount was transferred to withdrawer.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Re-fetch pool.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.withdrawals === 3);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
+
+    // Check withdraw state.
+    const withdraw = await program.account.withdrawState.fetch(
+      withdraw3Account
+    );
+    assert.ok(withdraw.pool.toString() === poolAccount.toString());
+    assert.ok(
+      withdraw.to.toString() === withdrawerYKeypair.publicKey.toString()
+    );
+    assert.ok(withdraw.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(withdraw.nullifierHash),
+        Buffer.from(testDeposit3.nullifierHash)
+      ) === 0
+    );
+  });
+
+  it("[withdraw] withdrawer Y creates a third withdrawal", async () => {
+    const vaultBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    let pool = await program.account.poolState.fetch(poolAccount);
+    const deposit = await program.account.depositState.fetch(deposit4Account);
+    const merkleRoot = pool.merkleRoots[pool.currentMerkleRootIndex];
+
+    const proof = await getSnarkProof(
+      testDeposit4,
+      new Uint8Array(merkleRoot),
+      deposit.index,
+      commitments
+    );
+
+    await program.methods
+      .withdraw(
+        poolAmount,
+        Array.from(testDeposit4.nullifierHash),
+        Array.from(merkleRoot),
+        Array.from(proof)
+      )
+      .accountsPartial({
+        withdrawer: withdrawerYKeypair.publicKey,
+        config: configAccount,
+        pool: poolAccount,
+      })
+      .signers([withdrawerYKeypair])
+      .rpc();
+
+    // Check if amount was transferred to withdrawer.
+    const vaultBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(vaultAccount)
+    );
+    assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.sub(poolAmount)));
+
+    // Re-fetch pool.
+    pool = await program.account.poolState.fetch(poolAccount);
+    assert.ok(pool.withdrawals === 4);
+    assert.ok(pool.totalValue.eq(vaultBalanceAfter));
+
+    // Check withdraw state.
+    const withdraw = await program.account.withdrawState.fetch(
+      withdraw4Account
+    );
+    assert.ok(withdraw.pool.toString() === poolAccount.toString());
+    assert.ok(
+      withdraw.to.toString() === withdrawerYKeypair.publicKey.toString()
+    );
+    assert.ok(withdraw.amount.eq(pool.amount));
+    assert.ok(
+      Buffer.compare(
+        Buffer.from(withdraw.nullifierHash),
+        Buffer.from(testDeposit4.nullifierHash)
       ) === 0
     );
   });
