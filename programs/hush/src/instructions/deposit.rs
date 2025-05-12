@@ -19,6 +19,13 @@ pub struct Deposit<'info> {
 
     #[account(
         mut,
+        seeds=[b"treasury"],
+        bump=config.treasury_bump
+    )]
+    pub treasury: SystemAccount<'info>,
+
+    #[account(
+        mut,
         seeds=[b"pool", amount.to_le_bytes().as_ref()],
         bump=pool.pool_bump,
     )]
@@ -86,6 +93,20 @@ impl<'info> Deposit<'info> {
             None,
         )?;
 
+        // Transfer deposit fee to treasury.
+        let fee = (self.config.fee_basis_points as u64)
+            .checked_mul(amount)
+            .unwrap()
+            .checked_div(10000_u64)
+            .unwrap();
+        transfer_sol(
+            self.depositor.to_account_info(),
+            self.treasury.to_account_info(),
+            fee,
+            self.system_program.to_account_info(),
+            None,
+        )?;
+
         // Update the incremental Merkle tree with the new leaf.
         self.pool.update_merkle_tree(commitment)?;
         self.pool.next_index += 1;
@@ -98,20 +119,9 @@ impl<'info> Deposit<'info> {
             from: self.depositor.key(),
             amount,
             commitment,
-            sibling_commitment: None,
             index: current_index,
             bump: bumps.deposit,
         });
-
-        // Store sibling commitments.
-        let is_right_leaf = current_index % 2 == 1;
-        if is_right_leaf {
-            let last_deposit = self.last_deposit.as_mut().unwrap();
-            // Store left leaf commitment in the right leaf.
-            self.deposit.sibling_commitment = Some(last_deposit.commitment);
-            // Store right leaf commitment in the left leaf.
-            last_deposit.sibling_commitment = Some(self.deposit.commitment);
-        }
 
         // Store last commitment in the pool state.
         self.pool.last_commitment = Some(self.deposit.commitment);

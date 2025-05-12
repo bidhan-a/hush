@@ -22,6 +22,7 @@ describe("hush", () => {
 
   // PDAs.
   let configAccount: anchor.web3.PublicKey;
+  let treasuryAccount: anchor.web3.PublicKey;
   let poolAccount: anchor.web3.PublicKey;
   let vaultAccount: anchor.web3.PublicKey;
   let depositAccount: anchor.web3.PublicKey;
@@ -36,6 +37,9 @@ describe("hush", () => {
   // Test values.
   const feeBasisPoints = 100; // 1%.
   const poolAmount = new anchor.BN(1 * LAMPORTS_PER_SOL); // 1 SOL pool.
+  const expectedFee = poolAmount
+    .mul(new anchor.BN(feeBasisPoints))
+    .div(new anchor.BN(10000));
   let testDeposit: IDeposit;
   let testDeposit2: IDeposit;
   let testDeposit3: IDeposit;
@@ -99,6 +103,10 @@ describe("hush", () => {
 
     [configAccount] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("config")],
+      program.programId
+    );
+    [treasuryAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("treasury")],
       program.programId
     );
     [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -230,6 +238,9 @@ describe("hush", () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
+    const treasuryBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
 
     await program.methods
       .deposit(poolAmount, Array.from(testDeposit.commitmentHash))
@@ -249,6 +260,12 @@ describe("hush", () => {
       await provider.connection.getBalance(vaultAccount)
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
+
+    // Check if fee was transferred to treasury.
+    const treasuryBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
+    assert.ok(treasuryBalanceAfter.eq(treasuryBalanceBefore.add(expectedFee)));
 
     // Check pool state.
     const pool = await program.account.poolState.fetch(poolAccount);
@@ -299,6 +316,9 @@ describe("hush", () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
     );
+    const treasuryBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
 
     let lastDeposit = null;
     let pool = await program.account.poolState.fetch(poolAccount);
@@ -332,6 +352,12 @@ describe("hush", () => {
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
 
+    // Check if fee was transferred to treasury.
+    const treasuryBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
+    assert.ok(treasuryBalanceAfter.eq(treasuryBalanceBefore.add(expectedFee)));
+
     // Check pool state.
     pool = await program.account.poolState.fetch(poolAccount);
     assert.ok(pool.nextIndex === 2);
@@ -363,6 +389,9 @@ describe("hush", () => {
   it("[deposit] depositor Y creates a second deposit", async () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
+    );
+    const treasuryBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
     );
 
     let lastDeposit = null;
@@ -397,6 +426,12 @@ describe("hush", () => {
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
 
+    // Check if fee was transferred to treasury.
+    const treasuryBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
+    assert.ok(treasuryBalanceAfter.eq(treasuryBalanceBefore.add(expectedFee)));
+
     // Check pool state.
     pool = await program.account.poolState.fetch(poolAccount);
     assert.ok(pool.nextIndex === 3);
@@ -428,6 +463,9 @@ describe("hush", () => {
   it("[deposit] depositor Y creates a third deposit", async () => {
     const vaultBalanceBefore = new anchor.BN(
       await provider.connection.getBalance(vaultAccount)
+    );
+    const treasuryBalanceBefore = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
     );
 
     let lastDeposit = null;
@@ -461,6 +499,12 @@ describe("hush", () => {
       await provider.connection.getBalance(vaultAccount)
     );
     assert.ok(vaultBalanceAfter.eq(vaultBalanceBefore.add(poolAmount)));
+
+    // Check if fee was transferred to treasury.
+    const treasuryBalanceAfter = new anchor.BN(
+      await provider.connection.getBalance(treasuryAccount)
+    );
+    assert.ok(treasuryBalanceAfter.eq(treasuryBalanceBefore.add(expectedFee)));
 
     // Check pool state.
     pool = await program.account.poolState.fetch(poolAccount);

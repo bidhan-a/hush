@@ -16,6 +16,12 @@ pub struct Initialize<'info> {
     )]
     pub config: Box<Account<'info, ConfigState>>,
 
+    #[account(
+        seeds=[b"treasury"],
+        bump
+    )]
+    pub treasury: SystemAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -25,6 +31,7 @@ impl<'info> Initialize<'info> {
             admin: self.admin.key(),
             fee_basis_points,
             bump: bumps.config,
+            treasury_bump: bumps.treasury,
         });
 
         Ok(())
