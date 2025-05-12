@@ -5,8 +5,11 @@ import Footer from "@/components/footer";
 import Pool from "@/components/pool";
 import Mixer from "@/components/mixer";
 import TransactionHistory from "@/components/txHistory";
+import { useApp } from "@/context/AppContext";
 
 const Hush = () => {
+  const { transactions } = useApp();
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <main className="flex-1 container mx-auto py-8 px-4">
@@ -18,7 +21,7 @@ const Hush = () => {
           <Mixer />
 
           <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
-          <TransactionHistory />
+          <TransactionHistory transactions={transactions} />
         </div>
       </main>
 

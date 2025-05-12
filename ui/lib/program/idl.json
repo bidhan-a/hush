@@ -91,6 +91,18 @@
           }
         },
         {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [116, 114, 101, 97, 115, 117, 114, 121]
+              }
+            ]
+          }
+        },
+        {
           "name": "pool",
           "writable": true,
           "pda": {
@@ -199,6 +211,17 @@
               {
                 "kind": "const",
                 "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [116, 114, 101, 97, 115, 117, 114, 121]
               }
             ]
           }
@@ -395,6 +418,10 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "treasury_bump",
+            "type": "u8"
           }
         ]
       }
@@ -420,14 +447,6 @@
             "name": "commitment",
             "type": {
               "array": ["u8", 32]
-            }
-          },
-          {
-            "name": "sibling_commitment",
-            "type": {
-              "option": {
-                "array": ["u8", 32]
-              }
             }
           },
           {

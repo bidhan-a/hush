@@ -97,6 +97,18 @@ export type Hush = {
           };
         },
         {
+          name: "treasury";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [116, 114, 101, 97, 115, 117, 114, 121];
+              }
+            ];
+          };
+        },
+        {
           name: "pool";
           writable: true;
           pda: {
@@ -205,6 +217,17 @@ export type Hush = {
               {
                 kind: "const";
                 value: [99, 111, 110, 102, 105, 103];
+              }
+            ];
+          };
+        },
+        {
+          name: "treasury";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [116, 114, 101, 97, 115, 117, 114, 121];
               }
             ];
           };
@@ -401,6 +424,10 @@ export type Hush = {
           {
             name: "bump";
             type: "u8";
+          },
+          {
+            name: "treasuryBump";
+            type: "u8";
           }
         ];
       };
@@ -426,14 +453,6 @@ export type Hush = {
             name: "commitment";
             type: {
               array: ["u8", 32];
-            };
-          },
-          {
-            name: "siblingCommitment";
-            type: {
-              option: {
-                array: ["u8", 32];
-              };
             };
           },
           {

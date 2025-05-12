@@ -101,7 +101,7 @@ const Mixer = () => {
 
             <button
               className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
-                depositNote && !depositNoteGenerating
+                depositNote && !depositNoteGenerating && !depositCreating
                   ? "bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
                   : "bg-gray-700 cursor-not-allowed"
               }`}
@@ -145,7 +145,13 @@ const Mixer = () => {
             </div>
 
             <button
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition flex items-center justify-center space-x-2 cursor-pointer"
+              className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center space-x-2 ${
+                withdrawalNote &&
+                withdrawalRecipientAddress &&
+                !withdrawalCreating
+                  ? "bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
+                  : "bg-gray-700 cursor-not-allowed"
+              }`}
               onClick={createWithdrawal}
               disabled={
                 !withdrawalNote ||

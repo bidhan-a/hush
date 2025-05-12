@@ -23,7 +23,13 @@ import {
 } from "@solana/wallet-adapter-react";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { getSnarkProof } from "@/lib/proof";
-import { getCommitments, saveCommitment, saveTransaction } from "@/app/actions";
+import {
+  getCommitments,
+  getTransactions,
+  saveCommitment,
+  saveTransaction,
+} from "@/app/actions";
+import { Transaction } from "@/app/generated/prisma";
 
 interface AppContext {
   selectedToken: Token;
@@ -37,6 +43,7 @@ interface AppContext {
   withdrawalRecipientAddress: string;
   withdrawalNote: string;
   withdrawalCreating: boolean;
+  transactions: Transaction[];
   selectToken: (token: Token) => void;
   selectPool: (pool: Pool) => void;
   generateDepositNote: () => Promise<void>;
@@ -58,6 +65,7 @@ const initialState: AppContext = {
   withdrawalRecipientAddress: "",
   withdrawalNote: "",
   withdrawalCreating: false,
+  transactions: [],
   selectToken: () => undefined,
   selectPool: () => undefined,
   generateDepositNote: async () => undefined,
@@ -124,6 +132,7 @@ export const AppContextProvider = ({
   const [withdrawalCreating, setWithdrawalCreating] = useState(
     initialState.withdrawalCreating
   );
+  const [transactions, setTransactions] = useState(initialState.transactions);
 
   const fetchPoolStats = useCallback(async () => {
     setSelectedPoolStatsLoading(true);
@@ -154,6 +163,18 @@ export const AppContextProvider = ({
       setSelectedPoolStatsLoading(false);
     }
   }, [anchorProvider, hushProgram, selectedPool]);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const transactions = await getTransactions(5);
+      if (transactions) {
+        setTransactions(transactions);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      toast.error("Could not fetch transactions.", { duration: 5000 });
+    }
+  }, []);
 
   const generateDepositNote = async () => {
     try {
@@ -235,6 +256,9 @@ export const AppContextProvider = ({
 
         // Refresh pool state.
         fetchPoolStats();
+
+        // Fetch transactions.
+        fetchTransactions();
       }
     } catch (e) {
       console.error(e);
@@ -326,6 +350,9 @@ export const AppContextProvider = ({
 
         // Refresh pool state.
         fetchPoolStats();
+
+        // Fetch transactions.
+        fetchTransactions();
       }
     } catch (e) {
       console.error(e);
@@ -343,8 +370,9 @@ export const AppContextProvider = ({
   useEffect(() => {
     if (selectedPool && selectedToken) {
       fetchPoolStats();
+      fetchTransactions();
     }
-  }, [selectedPool, selectedToken, fetchPoolStats]);
+  }, [selectedPool, selectedToken, fetchPoolStats, fetchTransactions]);
 
   return (
     <AppContext.Provider
@@ -358,13 +386,14 @@ export const AppContextProvider = ({
         depositCreating,
         withdrawalRecipientAddress,
         withdrawalNote,
+        withdrawalCreating,
+        transactions,
         selectToken,
         selectPool: setSelectedPool,
         generateDepositNote,
         createDeposit,
         setWithdrawalRecipientAddress,
         setWithdrawalNote,
-        withdrawalCreating,
         createWithdrawal,
       }}
     >
