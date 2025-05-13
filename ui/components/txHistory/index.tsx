@@ -22,50 +22,54 @@ const TransactionHistory = ({
   return (
     <div className="mb-8">
       <div className="space-y-3">
-        {transactions.map((tx, i) => (
-          <div
-            key={i}
-            className="flex justify-between items-center bg-gray-800 p-4 rounded-lg"
-          >
-            <div>
+        {transactions.length > 0 ? (
+          transactions.map((tx, i) => (
+            <div
+              key={i}
+              className="flex justify-between items-center bg-gray-800 p-4 rounded-lg"
+            >
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`text-sm ${
+                      tx.txType === TransactionType.DEPOSIT
+                        ? "text-green-400"
+                        : "text-blue-400"
+                    }`}
+                  >
+                    {tx.txType === TransactionType.DEPOSIT
+                      ? "Deposit"
+                      : "Withdraw"}
+                  </span>
+                  <span className="text-gray-400 text-sm">
+                    {formatAddress(tx.address)}
+                  </span>
+                  <Copy
+                    size={14}
+                    className="text-gray-500 cursor-pointer hover:text-gray-300"
+                    onClick={() => navigator.clipboard.writeText(tx.address)}
+                  />
+                </div>
+                <p className="text-sm text-gray-400">
+                  {dayjs().to(dayjs(tx.createdAt))}
+                </p>
+              </div>
               <div className="flex items-center space-x-2">
-                <span
-                  className={`text-sm ${
-                    tx.txType === TransactionType.DEPOSIT
-                      ? "text-green-400"
-                      : "text-blue-400"
-                  }`}
-                >
-                  {tx.txType === TransactionType.DEPOSIT
-                    ? "Deposit"
-                    : "Withdraw"}
-                </span>
-                <span className="text-gray-400 text-sm">
-                  {formatAddress(tx.address)}
-                </span>
-                <Copy
+                <ExternalLink
                   size={14}
                   className="text-gray-500 cursor-pointer hover:text-gray-300"
-                  onClick={() => navigator.clipboard.writeText(tx.address)}
+                  onClick={() =>
+                    window.open(
+                      `${process.env.NEXT_PUBLIC_SOLANA_EXPLORER_URL}/${tx.txHash}`
+                    )
+                  }
                 />
               </div>
-              <p className="text-sm text-gray-400">
-                {dayjs().to(dayjs(tx.createdAt))}
-              </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <ExternalLink
-                size={14}
-                className="text-gray-500 cursor-pointer hover:text-gray-300"
-                onClick={() =>
-                  window.open(
-                    `${process.env.NEXT_PUBLIC_SOLANA_EXPLORER_URL}/${tx.txHash}`
-                  )
-                }
-              />
-            </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>No transactions</p>
+        )}
       </div>
     </div>
   );

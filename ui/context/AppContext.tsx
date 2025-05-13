@@ -166,15 +166,22 @@ export const AppContextProvider = ({
 
   const fetchTransactions = useCallback(async () => {
     try {
-      const transactions = await getTransactions(5);
-      if (transactions) {
-        setTransactions(transactions);
+      if (hushProgram) {
+        const poolAmount = new anchor.BN(selectedPool.type * LAMPORTS_PER_SOL);
+        const [poolAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+          [Buffer.from("pool"), poolAmount.toArrayLike(Buffer, "le", 8)],
+          hushProgram.programId
+        );
+        const transactions = await getTransactions(poolAccount.toString(), 5);
+        if (transactions) {
+          setTransactions(transactions);
+        }
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
       toast.error("Could not fetch transactions.", { duration: 5000 });
     }
-  }, []);
+  }, [hushProgram, selectedPool]);
 
   const generateDepositNote = async () => {
     try {
@@ -240,8 +247,13 @@ export const AppContextProvider = ({
           .rpc();
 
         // Save commit and transaction in DB.
-        await saveCommitment(poolState.nextIndex, deposit.commitmentHash);
+        await saveCommitment(
+          poolAccount.toString(),
+          poolState.nextIndex,
+          deposit.commitmentHash
+        );
         await saveTransaction(
+          poolAccount.toString(),
           anchorProvider.publicKey.toString(),
           txHash,
           true
@@ -307,7 +319,7 @@ export const AppContextProvider = ({
         );
 
         // Get commitments.
-        const commitments = await getCommitments();
+        const commitments = await getCommitments(poolAccount.toString());
         const leaves = commitments.map((c) => c.commitment);
 
         // Create ZK proof.
@@ -336,6 +348,7 @@ export const AppContextProvider = ({
 
         // Save transaction in DB.
         await saveTransaction(
+          poolAccount.toString(),
           anchorProvider.publicKey.toString(),
           txHash,
           false

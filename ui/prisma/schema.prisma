@@ -15,15 +15,22 @@ enum TransactionType {
 
 model Commitment {
     id         Int      @id @default(autoincrement())
-    index      Int      @unique
+    poolKey    String   @map(name: "pool_key")
+    index      Int
     commitment Bytes    @unique
     createdAt  DateTime @default(now()) @map(name: "created_at")
+
+    @@unique([poolKey, index])
+    @@index([poolKey])
 }
 
 model Transaction {
     id        Int             @id @default(autoincrement())
+    poolKey   String          @map(name: "pool_key")
     txType    TransactionType @map(name: "tx_type")
     address   String
     txHash    String          @unique @map(name: "tx_hash")
     createdAt DateTime        @default(now()) @map(name: "created_at")
+
+    @@index([poolKey])
 }

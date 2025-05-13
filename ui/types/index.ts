@@ -5,9 +5,9 @@ export enum TokenType {
 
 export enum PoolType {
   ONE = 1,
+  TWO = 2,
+  FIVE = 5,
   TEN = 10,
-  HUNDRED = 100,
-  THOUSAND = 1000,
 }
 
 export interface Pool {
