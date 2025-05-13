@@ -60,7 +60,7 @@ const TransactionHistory = ({
                   className="text-gray-500 cursor-pointer hover:text-gray-300"
                   onClick={() =>
                     window.open(
-                      `${process.env.NEXT_PUBLIC_SOLANA_EXPLORER_URL}/${tx.txHash}`
+                      `${process.env.NEXT_PUBLIC_SOLANA_EXPLORER_URL}/${tx.txHash}?cluster=devnet`
                     )
                   }
                 />
