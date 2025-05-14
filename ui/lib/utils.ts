@@ -41,3 +41,13 @@ export const downloadNote = (note: string) => {
   element.click();
   document.body.removeChild(element);
 };
+
+export const areUint8ArraysEqual = (a: Uint8Array, b: Uint8Array) => {
+  if (a.length !== b.length) return false;
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+
+  return true;
+};

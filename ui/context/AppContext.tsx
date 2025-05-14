@@ -13,7 +13,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { toast } from "react-hot-toast";
 import { TOKENS } from "@/constants";
 import { Pool, PoolStats, Token } from "@/types";
-import { generateRandomNumber } from "@/lib/utils";
+import { areUint8ArraysEqual, generateRandomNumber, toHex } from "@/lib/utils";
 import Deposit, { IDeposit } from "@/lib/deposit";
 import { getHushProgram, Hush } from "@/lib/program";
 import {
@@ -25,6 +25,7 @@ import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { getSnarkProof } from "@/lib/proof";
 import {
   getCommitments,
+  getLastCommitment,
   getTransactions,
   saveCommitment,
   saveTransaction,
@@ -234,7 +235,29 @@ export const AppContextProvider = ({
             ],
             hushProgram.programId
           );
+
+          // Check if the commitment of the last deposit matches the one from DB.
+          const lastCommitment = await getLastCommitment(
+            poolAccount.toString()
+          );
+          if (
+            !lastCommitment ||
+            !areUint8ArraysEqual(
+              new Uint8Array(poolState.lastCommitment),
+              lastCommitment.commitment
+            )
+          ) {
+            throw new Error(`commitment hash mismatch`);
+          }
         }
+
+        console.log(
+          `Creating deposit: ${JSON.stringify({
+            poolAccount: poolAccount.toString(),
+            nextIndex: poolState.nextIndex,
+            commitmentHash: toHex(deposit.commitmentHash, 32),
+          })}.`
+        );
 
         // Create deposit.
         const txHash = await hushProgram.methods

@@ -3,6 +3,16 @@
 import prisma from "@/lib/prisma";
 import { TransactionType } from "@/app/generated/prisma";
 
+export async function getLastCommitment(poolKey: string) {
+  const commitment = await prisma.commitment.findFirst({
+    where: {
+      poolKey,
+    },
+    orderBy: [{ id: "desc" }],
+  });
+  return commitment;
+}
+
 export async function getCommitments(poolKey: string) {
   const commitments = await prisma.commitment.findMany({
     where: {
