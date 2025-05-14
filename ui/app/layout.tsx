@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { AppContextProvider } from "@/context/AppContext";
 import { SolanaWalletProvider } from "@/context/SolanaWalletContext";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
             {children}
           </AppContextProvider>
         </SolanaWalletProvider>
+        <Analytics />
       </body>
     </html>
   );
