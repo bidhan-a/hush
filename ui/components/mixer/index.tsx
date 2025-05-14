@@ -95,7 +95,7 @@ const Mixer = () => {
             <div className="mb-6 bg-gray-900 p-4 rounded-lg">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Protocol Fee</span>
-                <span>0.1%</span>
+                <span>1%</span>
               </div>
             </div>
 
