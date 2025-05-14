@@ -12,7 +12,7 @@ const WalletMultiButtonDynamic = dynamic(
 
 const Navbar = () => {
   return (
-    <nav className="bg-gray-900">
+    <nav className="bg-gray-900 font-onest">
       <header className="p-4 border-b border-gray-800">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">

@@ -1,5 +1,6 @@
 import { Copy, ArrowRight, Lock, Download } from "lucide-react";
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
 import { useApp } from "@/context/AppContext";
 import { downloadNote } from "@/lib/utils";
 
@@ -27,7 +28,7 @@ const Mixer = () => {
   };
 
   return (
-    <div className="bg-gray-800 rounded-xl overflow-hidden mb-8">
+    <div className="bg-gray-800 rounded-xl overflow-hidden mb-8 font-onest">
       {/* Tabs */}
       <div className="flex">
         <button
@@ -64,7 +65,12 @@ const Mixer = () => {
                       {depositNote}
                     </div>
                     <button
-                      onClick={() => navigator.clipboard.writeText(depositNote)}
+                      onClick={() => {
+                        navigator.clipboard.writeText(depositNote);
+                        toast.success("Copied to clipboard.", {
+                          duration: 3000,
+                        });
+                      }}
                       className="ml-2 text-gray-400 hover:text-white cursor-pointer"
                     >
                       <Copy size={16} />

@@ -3,6 +3,7 @@ import { Copy, ExternalLink } from "lucide-react";
 import React from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import toast from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
@@ -20,7 +21,7 @@ const TransactionHistory = ({
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 font-onest">
       <div className="space-y-3">
         {transactions.length > 0 ? (
           transactions.map((tx, i) => (
@@ -47,7 +48,12 @@ const TransactionHistory = ({
                   <Copy
                     size={14}
                     className="text-gray-500 cursor-pointer hover:text-gray-300"
-                    onClick={() => navigator.clipboard.writeText(tx.address)}
+                    onClick={() => {
+                      navigator.clipboard.writeText(tx.address);
+                      toast.success("Copied to clipboard.", {
+                        duration: 3000,
+                      });
+                    }}
                   />
                 </div>
                 <p className="text-sm text-gray-400">

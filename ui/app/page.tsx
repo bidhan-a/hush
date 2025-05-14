@@ -11,7 +11,7 @@ const Hush = () => {
   const { transactions } = useApp();
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white font-onest">
       <main className="flex-1 container mx-auto py-8 px-4">
         <div className="max-w-xl mx-auto">
           <h3 className="text-lg font-semibold mb-4">Select Pool</h3>

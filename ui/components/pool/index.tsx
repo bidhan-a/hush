@@ -21,7 +21,7 @@ const Pool = () => {
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 mb-8">
+    <div className="bg-gray-800 rounded-xl p-6 mb-8 font-onest">
       <div className="grid gap-6 mb-6">
         <div>
           <label className="block text-gray-400 text-sm mb-2">Token</label>
