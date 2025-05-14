@@ -68,7 +68,7 @@ const TransactionHistory = ({
             </div>
           ))
         ) : (
-          <p>No transactions</p>
+          <p className="text-sm text-gray-400">No transactions</p>
         )}
       </div>
     </div>
