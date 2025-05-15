@@ -30,7 +30,7 @@ This approach breaks the on-chain link between deposits and withdrawals, ensurin
 - Node.js and npm
 - Rust and Cargo
 - Solana CLI tools
-- Postgres
+- Docker
 - Circom
 - snarkjs
 
@@ -62,7 +62,12 @@ This approach breaks the on-chain link between deposits and withdrawals, ensurin
    anchor deploy
    ```
 
-6. **Run the UI:**
+6. **Run Postgres container:**
+   ```sh
+   docker-compose up
+   ```
+
+7. **Run the UI:**
    ```sh
    cd ui
    npm install
