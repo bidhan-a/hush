@@ -6,9 +6,9 @@ Hush is a privacy protocol on Solana, enabling private transactions powered by z
 
 Hush allows users to:
 
-- Deposit tokens into fixed-sized shielded pools, generating an encrypted note off-chain
-- Share the note with a recipient through any private channel
-- Use the note to create a zero-knowledge proof at withdrawal, which the program verifies before releasing funds
+- Deposit tokens into fixed-sized pools, generating an encrypted note off-chain.
+- Share the note with a recipient through any private channel.
+- Use the note to create a zero-knowledge proof at withdrawal, which the program verifies before releasing funds.
 
 This approach breaks the on-chain link between deposits and withdrawals, ensuring strong anonymity and privacy while preserving Solana's speed and security.
 
