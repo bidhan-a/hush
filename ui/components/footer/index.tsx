@@ -5,7 +5,7 @@ const Footer = () => {
     <footer className="border-t border-gray-800 py-6 font-onest">
       <div className="container mx-auto px-4 text-center text-gray-400 text-sm">
         <p>
-          Hush enables private transactions on Solana powered by zero-knowledge
+          Hush is a privacy protocol on Solana empowered by zero-knowledge
           proofs.
         </p>
         <p className="mt-2 text-xs">© 2025 Hush.</p>
