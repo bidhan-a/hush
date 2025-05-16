@@ -6,8 +6,8 @@ export const TOKENS: Token[] = [
     pools: [
       { type: PoolType.ONE, available: true },
       { type: PoolType.TWO, available: true },
-      { type: PoolType.FIVE, available: false },
-      { type: PoolType.TEN, available: false },
+      { type: PoolType.FIVE, available: true },
+      { type: PoolType.TEN, available: true },
     ],
   },
   {
