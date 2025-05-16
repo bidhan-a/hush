@@ -83,6 +83,13 @@ Run tests with:
 anchor test
 ```
 
+## Deployment
+
+The Solana program is deployed to Devnet at address `CkevGEmkCSpN3SgS9ptG42qL42vV4aTS8NrhDx29sxF3`.
+
+The frontend can be accessed [here](https://hush-nu.vercel.app/).
+
+
 ## ⚠️ Disclaimer
 
 This program is currently unaudited and intended for use on Solana devnet only.
