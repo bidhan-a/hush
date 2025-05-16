@@ -6,8 +6,10 @@ import Pool from "@/components/pool";
 import Mixer from "@/components/mixer";
 import TransactionHistory from "@/components/txHistory";
 import { useApp } from "@/context/AppContext";
+import { AnchorWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
 
 const Hush = () => {
+  const anchorWallet: AnchorWallet | undefined = useAnchorWallet();
   const { transactions } = useApp();
 
   return (
@@ -21,7 +23,10 @@ const Hush = () => {
           <Mixer />
 
           <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
-          <TransactionHistory transactions={transactions} />
+          <TransactionHistory
+            transactions={transactions}
+            isWalletConnected={anchorWallet ? true : false}
+          />
         </div>
       </main>
 

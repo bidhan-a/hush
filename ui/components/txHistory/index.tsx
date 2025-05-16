@@ -9,8 +9,10 @@ dayjs.extend(relativeTime);
 
 const TransactionHistory = ({
   transactions,
+  isWalletConnected,
 }: {
   transactions: Transaction[];
+  isWalletConnected: boolean;
 }) => {
   // Format address for display
   const formatAddress = (address: string) => {
@@ -74,7 +76,11 @@ const TransactionHistory = ({
             </div>
           ))
         ) : (
-          <p className="text-sm text-gray-400">No transactions</p>
+          <p className="text-sm text-gray-400">
+            {!isWalletConnected
+              ? `Please connect your wallet to view transactions.`
+              : `No transactions.`}
+          </p>
         )}
       </div>
     </div>
