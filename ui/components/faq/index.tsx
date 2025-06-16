@@ -97,8 +97,8 @@ const FAQ = () => {
 
               <div className="mt-8 pt-4 border-t border-gray-700">
                 <p className="text-sm text-yellow-400">
-                  ⚠️ This application is currently only available on Solana
-                  Devnet. Please use the{" "}
+                  ⚠️ Hush is currently only available on Solana Devnet. Please
+                  use the{" "}
                   <a
                     href="https://faucet.solana.com/"
                     target="_blank"
