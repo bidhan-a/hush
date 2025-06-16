@@ -37,12 +37,29 @@ const FAQ = () => {
             <div className="space-y-6">
               <section>
                 <h3 className="text-lg font-semibold text-emerald-400 mb-2">
+                  What is Hush?
+                </h3>
+                <div className="space-y-2 text-gray-300">
+                  <p>
+                    Hush is a privacy protocol on Solana that enables private
+                    transactions using zero-knowledge proofs.
+                  </p>
+                  <p>
+                    Imagine sending tokens to someone without anyone being able
+                    to trace the connection between you and the recipient.
+                    That&apos;s what Hush enables.
+                  </p>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-lg font-semibold text-emerald-400 mb-2">
                   How to Deposit
                 </h3>
                 <div className="space-y-2 text-gray-300">
                   <p>1. Connect your Solana wallet</p>
                   <p>2. Select a pool</p>
-                  <p>3. Switch to the &quot;Deposit&quot; tab</p>
+                  <p>3. Select the &quot;Deposit&quot; tab</p>
                   <p>4. Generate a deposit note</p>
                   <p>5. Save your deposit note securely</p>
                   <p>
@@ -58,7 +75,7 @@ const FAQ = () => {
                 <div className="space-y-2 text-gray-300">
                   <p>1. Connect your Solana wallet</p>
                   <p>2. Select a pool</p>
-                  <p>3. Switch to the &quot;Withdraw&quot; tab</p>
+                  <p>3. Select the &quot;Withdraw&quot; tab</p>
                   <p>4. Enter the recipient address</p>
                   <p>5. Enter your deposit note</p>
                   <p>
@@ -90,7 +107,7 @@ const FAQ = () => {
                   >
                     faucet
                   </a>{" "}
-                  to get some devnet SOL.
+                  to get some Devnet SOL.
                 </p>
               </div>
             </div>
