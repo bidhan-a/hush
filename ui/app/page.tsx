@@ -5,6 +5,7 @@ import Footer from "@/components/footer";
 import Pool from "@/components/pool";
 import Mixer from "@/components/mixer";
 import TransactionHistory from "@/components/txHistory";
+import FAQ from "@/components/faq";
 import { useApp } from "@/context/AppContext";
 import { AnchorWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
 
@@ -30,6 +31,7 @@ const Hush = () => {
         </div>
       </main>
 
+      <FAQ />
       <Footer />
     </div>
   );
